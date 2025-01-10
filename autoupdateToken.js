@@ -1,14 +1,13 @@
-
 require('dotenv').config();
 const fetch = require('node-fetch');
 
 const url = 'https://demo.phillipmobile.com/MobileControlService.svc/GetOpenPositionList';
 
 const headers = {
-  Accept: '*/*',
+  'Accept': '*/*',
   'Accept-Language': 'en-US,en;q=0.9',
   'Content-Type': 'application/json',
-  Priority: 'u=1, i',
+  'Priority': 'u=1, i',
   'Sec-CH-UA': '"Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
   'Sec-CH-UA-Mobile': '?0',
   'Sec-CH-UA-Platform': '"Windows"',
@@ -16,7 +15,7 @@ const headers = {
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
   'X-Requested-With': 'XMLHttpRequest',
-  Referer: 'https://demo.phillipmobile.com/desktop/order_history_trade.html?v5',
+  'Referer': 'https://demo.phillipmobile.com/desktop/order_history_trade.html?v5',
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
@@ -49,8 +48,8 @@ async function getOpenPositionList(config) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        user:process.env.USER,
-        pass:process.env.PASS
+        user:process.env.USERE,
+        pass:process.env.USERP
       })
     });
     const result = await response.json();
