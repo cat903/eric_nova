@@ -34,6 +34,10 @@ function spawnWorker(scriptPath, data) {
     });
 }
 
+app.get('/', (req,res)=>{
+    res.status(200).json({ message: 'server running' });
+})
+
 // Define the POST /signal endpoint
 app.post('/signal', async (req, res) => {
     const webhookData = req.body;
