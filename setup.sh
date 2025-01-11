@@ -13,6 +13,7 @@ cd eric_nova
 # Prompt user for credentials
 read -r -p "Please enter your username: " USERNAME
 read -r -sp "Please enter your password: " PASSWORD
+read -r -p "Please enter your discordwebhook: " DISCORD
 echo ""
 
 # Create .env file with provided credentials
@@ -20,6 +21,8 @@ echo "Creating .env file..."
 {
   echo "USERE=$USERNAME"
   echo "USERP=$PASSWORD"
+  echo "USERP=$DISCORDWEBHOOK"
+
 } > .env
 
 # Step 1: Download and install nvm
