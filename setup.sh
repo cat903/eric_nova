@@ -21,7 +21,7 @@ echo "Creating .env file..."
 {
   echo "USERE=$USERNAME"
   echo "USERP=$PASSWORD"
-  echo "USERP=$DISCORDWEBHOOK"
+  echo "DISCORDWEBHOOK=$DISCORD"
 
 } > .env
 
