@@ -10,7 +10,7 @@ async function delay(time) { return new Promise(function (resolve) { setTimeout(
 async function executeMarketEntryAction(data) {
     const openPositions = await getOpenPosition(require('./config.json'));
     const status = data.type === '-1' ? 'short' : 'long'
-    if (openPositions.length === 0) {
+    if (openPositions?.length === 0) {
         const resultofOrder = await marketOrder(data.action,require('./config.json'));
         await sendtoDiscord(`entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
         await delay(15000);
