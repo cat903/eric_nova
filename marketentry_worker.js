@@ -2,7 +2,8 @@ const { parentPort, workerData } = require('worker_threads');
 const getOpenPosition = require('./getOpenPosition.js');
 const marketOrder = require('./marketOrder.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
-const moment = require('moment');
+const moment = require('moment-timezone');
+
 
 async function delay(time) { return new Promise(function (resolve) { setTimeout(resolve, time) }) };
 
