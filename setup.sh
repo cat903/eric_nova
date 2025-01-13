@@ -12,18 +12,28 @@ cd eric_nova
 
 # Prompt user for credentials
 read -r -p "Please enter your username: " USERNAME
-read -r -sp "Please enter your password: " PASSWORD
-read -r -p "Please enter your discordwebhook: " DISCORD
+echo -n "Please enter your password: "
+stty -echo
+read PASSWORD
+stty echo
 echo ""
+read -r -p "Please enter your Discord webhook: " DISCORD
 
-# Create .env file with provided credentials
+# Validate inputs
+if [[ -z "$USERNAME" || -z "$PASSWORD" || -z "$DISCORD" ]]; then
+  echo "Error: All fields are required."
+  exit 1
+fi
+
+# Create .env file
 echo "Creating .env file..."
 {
   echo "USERE=$USERNAME"
   echo "USERP=$PASSWORD"
   echo "DISCORDWEBHOOK=$DISCORD"
-
 } > .env
+
+echo ".env file created successfully."
 
 # Step 1: Download and install nvm
 echo "Downloading and installing nvm..."
@@ -76,12 +86,23 @@ sudo certbot --nginx -d "$HOSTNAME"
 # Step 11: Configure Nginx to use proxy pass at port 3000
 echo "Configuring Nginx to use proxy pass at port 3000..."
 NGINX_CONF="/etc/nginx/sites-available/default"
-sudo sed -i "$(awk '/location \/ {/ {n++} n==3 {print NR; exit}' $NGINX_CONF)s|location / {[^}]*|location / {\n    proxy_pass http://localhost:3000;\n    proxy_http_version 1.1;\n    proxy_set_header Upgrade \$http_upgrade;\n    proxy_set_header Connection \"upgrade\";\n    proxy_set_header Host \$host;\n    proxy_set_header X-Real-IP \$remote_addr;\n    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n    proxy_cache_bypass \$http_upgrade;|" $NGINX_CONF
+sudo sed -i "$(awk '/location \/ {/{n++} n==3 {print FNR; exit}' $NGINX_CONF),$(awk '/location \/ {/{n++} n==3 {p=1} p && /}/ {print FNR; exit}' $NGINX_CONF)c\location / {\n    proxy_pass http://localhost:3000;\n    proxy_http_version 1.1;\n    proxy_set_header Upgrade \$http_upgrade;\n    proxy_set_header Connection \"upgrade\";\n    proxy_set_header Host \$host;\n    proxy_set_header X-Real-IP \$remote_addr;\n    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n    proxy_cache_bypass \$http_upgrade;\n}" $NGINX_CONF
+
 
 
 # Restart Nginx to apply the changes
 echo "Restarting Nginx..."
 sudo systemctl restart nginx
+
+# Step 12: Save the PM2 process list and its configuration
+echo "Saving PM2 process list..."
+pm2 save
+
+# Step 13: Set PM2 to start at system boot
+echo "Setting up PM2 startup script..."
+PM2_STARTUP_COMMAND=$(pm2 startup | tail -n 1)
+eval $PM2_STARTUP_COMMAND
+
 
 # Completion message
 echo "Setup completed! Node.js, PM2, Nginx, and SSL certificate have been installed and configured."
