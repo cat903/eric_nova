@@ -22,7 +22,6 @@ const requestBody = {
   Order: {
     OrderType: 'M',
     InstrumentCode: 'F.BMD.FCPO',
-    SeriesCode: 'F.BMD.FCPO.H25',
     OrderQuantity: 1,
     LimitPrice: 0,
     StopPrice: 0,
@@ -36,8 +35,9 @@ const requestBody = {
   PlatformCode: 'D',
 };
 
-async function marketOrder(orderType,config) {
+async function marketOrder(orderType,config,seriesCode) {
   requestBody.Order.AccountNo = config.token;
+  requestBody.Order.SeriesCode = seriesCode
   headers['X-Session-IV'] = config.xSessionIv;
   const action = orderType==='buy'? 1 : 2;
   requestBody.Order.BuySell = action;
