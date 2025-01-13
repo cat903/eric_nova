@@ -10,7 +10,6 @@ async function delay(time) { return new Promise(function (resolve) { setTimeout(
 
 async function executeMarketExitAction(data) {
   const openPositions = await getOpenPosition(require('./config.json'));
-  console.log(openPositions);
   const status = data.action === 'buy' ? 'short' : 'long';
   if (openPositions?.length === 1) {
     const resultofOrder = await marketOrder(data.action,require('./config.json'));
