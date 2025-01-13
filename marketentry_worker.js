@@ -15,14 +15,16 @@ async function executeMarketEntryAction(data) {
         await sendtoDiscord(`entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
         await delay(15000);
         const openPositions = await getOpenPosition(require('./config.json'));
-        if(openPositions.length === 1){
+        if(openPositions?.length === 1){
             await sendtoDiscord(`${moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss')} ->-> filled entry ->-> ${data.action} ->-> ${data.symbol}@${openPositions[0].AveragePrice}`);
+            console.log('entry filled successfully!')
         }
         else{
             await sendtoDiscord(`${moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss')} ->-> failed to fill entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
+            console.log('entry failed trade rejected!')
         }
     }
-    return 'entry action completed successfully!';
+    return 'entry attempt completed successfully!';
 }
 
 executeMarketEntryAction(workerData)
