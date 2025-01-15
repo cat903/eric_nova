@@ -6,33 +6,67 @@ const calculateProfitLoss = require('./calculateProfitLoss.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
 
-async function delay(time) { return new Promise(function (resolve) { setTimeout(resolve, time) }) };
+async function delay(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
+
+async function logAndNotify(message) {
+  await sendtoDiscord(message);
+  console.log(message);
+}
+
+async function checkOpenPositions(action, symbol, entryPrice) {
+  const openPositions = await getOpenPosition(require('./config.json'));
+  if (!openPositions?.length) {
+    const errorMessage = `demo nova server timed out, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    await logAndNotify(errorMessage);
+    return null;
+  }
+  return openPositions;
+}
+
+async function processExitCompletion(action, symbol, entryPrice, status, openPositions) {
+  if (!openPositions?.length) {
+    const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
+    const successMessage = `${timestamp} ->-> filled exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    await logAndNotify(successMessage);
+
+    const orderHistory = await getOrderHistory(require('./config.json'));
+    const profitLoss = calculateProfitLoss(orderHistory, status);
+
+    const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
+    await logAndNotify(profitLossMessage);
+
+    console.log('Exit action completed successfully');
+    return true;
+  } else {
+    const failureMessage = `Could not fill exit order, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    await logAndNotify(failureMessage);
+    console.log('Exit action failed, market order failed');
+    return false;
+  }
+}
 
 async function executeMarketExitAction(data) {
-  const openPositions = await getOpenPosition(require('./config.json'));
+  const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+  if (!openPositions) return;
+
   const status = data.action === 'buy' ? 'short' : 'long';
-  if (openPositions?.length === 1) {
-    const resultofOrder = await marketOrder(data.action,require('./config.json'),data.seriesCode);
-    await sendtoDiscord(`exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
+
+  if (openPositions.length === 1) {
+    await marketOrder(data.action, require('./config.json'), data.seriesCode);
+    await logAndNotify(`Exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
     await delay(15000);
-    const openPositions = await getOpenPosition(require('./config.json'));
-    if (openPositions?.length === 0){
-      await sendtoDiscord(`${moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss')} ->-> filled exit ->-> ${data.action} ->-> ${data.symbol}@${openPositions[0].AveragePrice}`);
-      const orderHistory = await getOrderHistory(require('./config.json'));
-      const profitLoss = calculateProfitLoss(orderHistory,status);
-      await sendtoDiscord(`${profitLoss?.result} -> RM ${profitLoss?.amount}`);
-      console.log('exit action completed successfully');
-    }
-    else{
-      await sendtoDiscord(`trade rejected exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-      console.log('exit action failed trade rejected');
-    }
-    return 'exit attempt completed successfully!';
+
+    const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+    if (!refreshedOpenPositions) return;
+
+    await processExitCompletion(data.action, data.symbol, data.entryPrice, status, refreshedOpenPositions);
   }
 }
 
 executeMarketExitAction(workerData)
-  .then((result) => parentPort.postMessage(result))
+  .then((result) => parentPort.postMessage(result || 'Exit attempt completed successfully!'))
   .catch((error) => {
     parentPort.postMessage(`Error in exit action: ${error.message}`);
     process.exit(1);

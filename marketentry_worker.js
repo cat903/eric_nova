@@ -4,38 +4,59 @@ const marketOrder = require('./marketOrder.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
 
+async function delay(time) {
+  return new Promise((resolve) => setTimeout(resolve, time));
+}
 
-async function delay(time) { return new Promise(function (resolve) { setTimeout(resolve, time) }) };
+async function logAndNotify(message) {
+  await sendtoDiscord(message);
+  console.log(message);
+}
+
+async function checkOpenPositions(action, symbol, entryPrice) {
+  const openPositions = await getOpenPosition(require('./config.json'));
+  if (!openPositions?.length) {
+    const errorMessage = `demo nova server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    await logAndNotify(errorMessage);
+    return null;
+  }
+  return openPositions;
+}
+
+async function processEntryCompletion(action, symbol, entryPrice, openPositions) {
+  if (openPositions.length === 1) {
+    const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
+    const successMessage = `${timestamp} ->-> filled entry ->-> ${action} ->-> ${symbol}@${openPositions[0].AveragePrice}`;
+    await logAndNotify(successMessage);
+
+    console.log('Entry filled successfully!');
+    return true;
+  }
+  return false;
+}
 
 async function executeMarketEntryAction(data) {
-    const openPositions = await getOpenPosition(require('./config.json'));
-    const status = data.type === '-1' ? 'short' : 'long'
-    if (openPositions?.length === 0) {
-        const resultofOrder = await marketOrder(data.action,require('./config.json'),data.seriesCode);
-        await sendtoDiscord(`entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-        await delay(15000);
-        const openPositions = await getOpenPosition(require('./config.json'));
-        if(openPositions?.length === 1){
-            await sendtoDiscord(`${moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss')} ->-> filled entry ->-> ${data.action} ->-> ${data.symbol}@${openPositions[0].AveragePrice}`);
-            console.log('entry filled successfully!')
-        }
-        else{
-            await sendtoDiscord(`${moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss')} ->-> failed to fill entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-            console.log('entry failed trade rejected!')
-        }
-    }
-    else{
-        if(!openPositions?.length){
-          await sendtoDiscord(`${moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss')} ->-> failed to fill entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-          console.log('entry failed error on getting openposition!')
-        }
-    }
-    return 'entry attempt completed successfully!';
+  const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+  if (!openPositions) return 'Entry action failed: could not get open positions';
+
+  if (openPositions.length === 0) {
+    await marketOrder(data.action, require('./config.json'), data.seriesCode);
+    await logAndNotify(`Entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
+    await delay(15000);
+
+    const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+    if (!refreshedOpenPositions) return 'Entry action failed: could not get refreshed open positions';
+
+    const success = await processEntryCompletion(data.action, data.symbol, data.entryPrice, refreshedOpenPositions);
+    return success ? 'Entry attempt completed successfully!' : 'Entry attempt failed: could not fill the order';
+  }
+
+  return 'Entry action not required: position already open';
 }
 
 executeMarketEntryAction(workerData)
-    .then((result) => parentPort.postMessage(result))
-    .catch((error) => {
-        parentPort.postMessage(`Error in entry action: ${error.message}`);
-        process.exit(1);
-    });
+  .then((result) => parentPort.postMessage(result))
+  .catch((error) => {
+    parentPort.postMessage(`Error in entry action: ${error.message}`);
+    process.exit(1);
+  });
