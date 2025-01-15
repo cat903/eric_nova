@@ -17,7 +17,8 @@ async function logAndNotify(message) {
 
 async function checkOpenPositions(action, symbol, entryPrice) {
   const openPositions = await getOpenPosition(require('./config.json'));
-  if (!openPositions?.length) {
+  console.log(openPositions);
+  if (openPositions?.length !== 0 && openPositions?.length !== 1) {
     const errorMessage = `demo nova server timed out, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     return null;

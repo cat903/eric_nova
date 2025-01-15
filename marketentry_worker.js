@@ -15,7 +15,8 @@ async function logAndNotify(message) {
 
 async function checkOpenPositions(action, symbol, entryPrice) {
   const openPositions = await getOpenPosition(require('./config.json'));
-  if (!openPositions?.length) {
+  console.log(openPositions);
+  if (openPositions?.length !== 0 && openPositions?.length !== 1) {
     const errorMessage = `demo nova server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     return null;
@@ -37,6 +38,7 @@ async function processEntryCompletion(action, symbol, entryPrice, openPositions)
 
 async function executeMarketEntryAction(data) {
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+
   if (!openPositions) return 'Entry action failed: could not get open positions';
 
   if (openPositions.length === 0) {

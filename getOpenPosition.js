@@ -9,7 +9,7 @@ async function fetchWithRetry(url, headers, requestBody) {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers:headers, 
+        headers:headers,
         body:JSON.stringify(requestBody),
         signal:AbortSignal.timeout(15000)
       });
@@ -19,7 +19,7 @@ async function fetchWithRetry(url, headers, requestBody) {
     } catch (error) {
       if (error.name === "TimeoutError") {
         console.log('15000 ms timeout while getting open position');
-      } 
+      }
       retryCount++;
     }
   }

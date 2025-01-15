@@ -18,7 +18,6 @@ const calculateProfitLoss = (orders,status) => {
            profitLoss = sellPrice - buyPrice;
         }
         const result = profitLoss >= 0 ? "Profit" : "Loss";
-        console.log(`Result: ${result}, Amount: ${(Math.abs(profitLoss)*25)}`);
         return {
             result,
             amount: (Math.abs(profitLoss)*25),

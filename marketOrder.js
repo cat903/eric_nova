@@ -48,7 +48,6 @@ async function marketOrder(orderType,config,seriesCode) {
     body: JSON.stringify(requestBody),
   });
   const result = (await response.json());
-  console.log(result);
   return result;
   }catch(e){
     console.log(e);

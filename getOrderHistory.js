@@ -35,7 +35,6 @@ async function getOrderHistory(config) {
   });
   const result = (await response.json());
   const orderHistory = result.GetOrderHistoryResult;
-  console.log(orderHistory);
   return orderHistory
 };
 
