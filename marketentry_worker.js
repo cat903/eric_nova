@@ -24,6 +24,12 @@ async function executeMarketEntryAction(data) {
             console.log('entry failed trade rejected!')
         }
     }
+    else{
+        if(!openPositions?.length){
+          await sendtoDiscord(`${moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss')} ->-> failed to fill entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
+          console.log('entry failed error on getting openposition!')
+        }
+    }
     return 'entry attempt completed successfully!';
 }
 
