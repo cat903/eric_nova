@@ -41,7 +41,8 @@ async function marketOrder(orderType,config,seriesCode) {
   headers['X-Session-IV'] = config.xSessionIv;
   const action = orderType==='buy'? 1 : 2;
   requestBody.Order.BuySell = action;
-  const response = await fetch(url, {
+  try{
+    const response = await fetch(url, {
     method: 'POST',
     headers: headers,
     body: JSON.stringify(requestBody),
@@ -49,6 +50,9 @@ async function marketOrder(orderType,config,seriesCode) {
   const result = (await response.json());
   console.log(result);
   return result;
+  }catch(e){
+    console.log(e);
+  }
 };
 
 module.exports = marketOrder
