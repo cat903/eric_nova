@@ -62,7 +62,7 @@ async function executeMarketExitAction(data) {
     const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
     if (!refreshedOpenPositions) return;
 
-    await processExitCompletion(data.action, data.symbol, data.entryPrice, status, refreshedOpenPositions);
+    await processExitCompletion(data.action, data.symbol, data.entryPrice, entryStatus, refreshedOpenPositions);
   }
 }
 
