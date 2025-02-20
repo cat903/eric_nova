@@ -1,17 +1,14 @@
 #!/bin/bash
 
-REPO_DIR="eric_nova"
-REPO_URL="https://github.com/cat903/eric_nova.git"
+# Remove existing folder
+rm -rf eric_nova
 
-if [ -d "$REPO_DIR" ]; then
-    echo "Directory '$REPO_DIR' already exists. Updating repository..."
-    cd "$REPO_DIR" || exit
-    git pull
-else
-    echo "Cloning repository..."
-    git clone "$REPO_URL"
-    cd "$REPO_DIR" || exit
-fi
+# Clone fresh
+git clone https://github.com/cat903/eric_nova.git
+cd eric_nova
+
+echo "Installing PM2 globally..."
+npm install pm2 -g
 
 echo "Installing project dependencies..."
 npm install --save
