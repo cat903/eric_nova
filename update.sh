@@ -1,11 +1,23 @@
 #!/bin/bash
 
+# Backup existing .env file if it exists
+if [ -f "eric_nova/.env" ]; then
+    echo "Backing up existing .env file..."
+    cp eric_nova/.env .env.bak
+fi
+
 # Remove existing folder
 rm -rf eric_nova
 
-# Clone fresh
+# Clone fresh repository
 git clone https://github.com/cat903/eric_nova.git
 cd eric_nova
+
+# Restore .env file from backup if it exists
+if [ -f "../.env.bak" ]; then
+    echo "Restoring .env file to new repository..."
+    mv ../.env.bak .env
+fi
 
 # Load nvm into the current shell session
 export NVM_DIR="$HOME/.nvm"
