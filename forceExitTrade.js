@@ -54,7 +54,7 @@ async function executeForceMarketExitAction() {
 
   if (openPositions.length === 1) {
     await marketOrder(action, require('./config.json'), tradeInfo.SeriesCode);
-    await logAndNotify(`Force Exit ->-> ${action} ->-> ${tradeInfo.SeriesTradeCode}`);
+    await logAndNotify(`Asking For Force Exit ->-> ${action} ->-> ${tradeInfo.SeriesTradeCode}`);
     await delay(15000);
 
     const refreshedOpenPositions = await checkOpenPositions();
