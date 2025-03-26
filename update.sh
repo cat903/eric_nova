@@ -37,3 +37,5 @@ pm2 update
 
 echo "Starting application with PM2..."
 pm2 start ecosystem.config.js
+
+clear
