@@ -45,7 +45,7 @@ async function processExitCompletion(action, symbol, status, openPositions) {
   }
 }
 
-async function executeForceMarketExitAction(data) {
+async function executeForceMarketExitAction() {
   const openPositions = await checkOpenPositions();
   if (!openPositions) return;
   const tradeInfo = openPositions?.GetOpenPositionListResult?.Item1[0]
@@ -89,7 +89,7 @@ function checkMarketClosing() {
 
         if (diffMinutes >= 0 && diffMinutes <= 30) {
             console.log(`Market closing soon (${closingTime}), calling close()...`);
-            close();
+            executeForceMarketExitAction()
         }
     });
 }
