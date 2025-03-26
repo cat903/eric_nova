@@ -32,5 +32,8 @@ npm install pm2 -g
 echo "Installing project dependencies..."
 npm install --save
 
+echo "Updating PM2..."
+pm2 update
+
 echo "Starting application with PM2..."
 pm2 start ecosystem.config.js
