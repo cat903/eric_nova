@@ -11,8 +11,8 @@ async function delay(time) {
 }
 
 async function logAndNotify(message) {
-  await sendtoDiscord(message);
   console.log(message);
+  await sendtoDiscord(message);
 }
 
 async function checkOpenPositions(action, symbol, entryPrice) {
