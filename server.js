@@ -41,6 +41,8 @@ app.get('/', (req,res)=>{
 // Define the POST /signal endpoint
 app.post('/signal', async (req, res) => {
     const webhookData = req.body;
+    // Process the webhook data as needed
+    console.log('Received webhook:', webhookData);
     if (webhookData.type === '-1' || webhookData.type === '1') {
         console.log('Spawning worker for entry action...');
         await spawnWorker('./marketentry_worker.js', webhookData);
@@ -49,11 +51,8 @@ app.post('/signal', async (req, res) => {
         console.log('Spawning worker for exit action...');
         await spawnWorker('./marketexit_worker.js', webhookData);
     }
-
-    // Process the webhook data as needed
-    console.log('Received webhook:', webhookData);
-
-    res.status(200).json({ message: 'Webhook received successfully!' });
+    
+    res.status(200).json({ message: 'Webhook processed successfully!' });
 });
 
 // Handle undefined routes (404)
