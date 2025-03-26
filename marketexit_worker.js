@@ -53,7 +53,7 @@ async function executeMarketExitAction(data) {
 
   if (openPositions.length === 1 && oppositeStatus) {
     await marketOrder(data.action, require('./config.json'), data.seriesCode);
-    await logAndNotify(`Exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
+    await logAndNotify(`Asking For Exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
     await delay(15000);
 
     const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
