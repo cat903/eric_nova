@@ -1,5 +1,6 @@
 #!/bin/bash
 
+cd ~
 # Prompt user for hostname
 read -p "Please enter your hostname (e.g., example.com): " HOSTNAME
 
