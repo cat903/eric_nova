@@ -15,7 +15,7 @@ module.exports = {
         },
         {
             name: 'force_exit',
-            script: './force_exit.js',
+            script: './forceExitTrade.js',
             cron_restart: '*/5 * * * *',
             autorestart: false,
             watch: false
