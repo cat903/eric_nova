@@ -30,7 +30,7 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
     const orderHistory = await getOrderHistory(require('./config.json'));
     const profitLoss = calculateProfitLoss(orderHistory, status);
-    const successMessage = `${timestamp} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.firstOrder}`;
+    const successMessage = `${timestamp} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
     await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
     await logAndNotify(profitLossMessage);
