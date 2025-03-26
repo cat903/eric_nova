@@ -6,11 +6,10 @@ const calculateProfitLoss = (orders,marketentryStatus) => {
 
     const firstOrder = orders[0];
     const secondOrder = orders[1];
-
+    const top = firstOrder.AveragePrice;
+    const bottom = secondOrder.AveragePrice;
     // Ensure first order is SELL and second order is BUY
     if (((firstOrder.OrderStatusDesc === 'Filled') || (secondOrder.OrderStatusDesc === 'Filled')) && (firstOrder.BuySell !== secondOrder.BuySell)) {
-        const top = firstOrder.AveragePrice;
-        const bottom = secondOrder.AveragePrice;
         let profitLoss = null;
         if(marketentryStatus==='sell'){
            profitLoss = bottom - top;
@@ -21,7 +20,7 @@ const calculateProfitLoss = (orders,marketentryStatus) => {
         return {
             result,
             amount: (Math.abs(profitLoss)*25),
-            firstOrder
+            top
         };
     }
 };
