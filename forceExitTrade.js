@@ -11,8 +11,8 @@ async function delay(time) {
 }
 
 async function logAndNotify(message) {
-  await sendtoDiscord(message);
   console.log(message);
+  await sendtoDiscord(message);
 }
 
 async function checkOpenPositions() {
@@ -29,15 +29,12 @@ async function checkOpenPositions() {
 async function processExitCompletion(action, symbol, status, openPositions) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const successMessage = `${timestamp} ->-> force exit ->-> ${action} ->-> ${symbol}`;
-    await logAndNotify(successMessage);
-
     const orderHistory = await getOrderHistory(require('./config.json'));
     const profitLoss = calculateProfitLoss(orderHistory, status);
-
+    const successMessage = `${timestamp} ->-> filled force exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
+    await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
     await logAndNotify(profitLossMessage);
-
     console.log('Exit action completed successfully');
     return true;
   } else {
