@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ~
+
 # Backup existing .env file if it exists
 if [ -f "eric_nova/.env" ]; then
     echo "Backing up existing .env file..."
