@@ -43,7 +43,7 @@ async function executeMarketEntryAction(data) {
 
   if (openPositions.length === 0) {
     await marketOrder(data.action, require('./config.json'), data.seriesCode);
-    await logAndNotify(`Entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
+    await logAndNotify(`Asking For Entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
     await delay(15000);
 
     const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
