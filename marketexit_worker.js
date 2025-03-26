@@ -29,15 +29,12 @@ async function checkOpenPositions(action, symbol, entryPrice) {
 async function processExitCompletion(action, symbol, entryPrice, status, openPositions) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const successMessage = `${timestamp} ->-> filled exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
-    await logAndNotify(successMessage);
-
     const orderHistory = await getOrderHistory(require('./config.json'));
     const profitLoss = calculateProfitLoss(orderHistory, status);
-
+    const successMessage = `${timestamp} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.firstOrder}`;
+    await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
     await logAndNotify(profitLossMessage);
-
     console.log('Exit action completed successfully');
     return true;
   } else {
