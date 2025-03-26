@@ -21,6 +21,7 @@ const calculateProfitLoss = (orders,marketentryStatus) => {
         return {
             result,
             amount: (Math.abs(profitLoss)*25),
+            firstOrder
         };
     }
 };
