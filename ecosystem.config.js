@@ -12,6 +12,13 @@ module.exports = {
             script: './server.js',
             autorestart: false,
             watch: false
+        },
+        {
+            name: 'force_exit',
+            script: './force_exit.js',
+            cron_restart: '*/5 * * * *',
+            autorestart: false,
+            watch: false
         }
     ]
 };
