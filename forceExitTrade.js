@@ -48,7 +48,7 @@ async function processExitCompletion(action, symbol, status, openPositions) {
 async function executeForceMarketExitAction() {
   const openPositions = await checkOpenPositions();
   if (!openPositions) return;
-  const tradeInfo = openPositions?.GetOpenPositionListResult?.Item1[0]
+  const tradeInfo = openPositions[0]
   const action = tradeInfo?.OpenQuantity === '-1.0' ? 'buy' : 'sell';
   const status = tradeInfo?.OpenQuantity === '-1.0' ? 'sell' : 'buy';
 
@@ -58,8 +58,6 @@ async function executeForceMarketExitAction() {
     await delay(15000);
 
     const refreshedOpenPositions = await checkOpenPositions();
-    if (!refreshedOpenPositions) return;
-
     await processExitCompletion(action,tradeInfo.SeriesTradeCode, status, refreshedOpenPositions);
   }
 }
