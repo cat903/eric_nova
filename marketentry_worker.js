@@ -37,52 +37,54 @@ async function processEntryCompletion(action, symbol, entryPrice, openPositions)
 
 async function executeMarketEntryAction(data) {
   const allowedtoEnterMarket = canTrade();
-  if(allowedtoEnterMarket){
-      const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+  if (allowedtoEnterMarket) {
+    const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
 
-  if (!openPositions) return 'Entry action failed: could not get open positions';
+    if (!openPositions) return 'Entry action failed: could not get open positions';
 
-  if (openPositions.length === 0) {
-    await marketOrder(data.action, require('./config.json'), data.seriesCode);
-    await logAndNotify(`Asking For Entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-    await delay(15000);
+    if (openPositions.length === 0) {
+      await marketOrder(data.action, require('./config.json'), data.seriesCode);
+      await logAndNotify(`Asking For Entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
+      await delay(15000);
 
-    const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
-    if (!refreshedOpenPositions) return 'Entry action failed: could not get refreshed open positions';
+      const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+      if (!refreshedOpenPositions) return 'Entry action failed: could not get refreshed open positions';
 
-    const success = await processEntryCompletion(data.action, data.symbol, data.entryPrice, refreshedOpenPositions);
-    return success ? 'Entry attempt completed successfully!' : 'Entry attempt failed: could not fill the order';
+      const success = await processEntryCompletion(data.action, data.symbol, data.entryPrice, refreshedOpenPositions);
+      return success ? 'Entry attempt completed successfully!' : 'Entry attempt failed: could not fill the order';
+    }
+
+    return 'Entry action not required: position already open';
   }
-
-  return 'Entry action not required: position already open';
+  else{
+    await logAndNotify(`Entry Rejected Market Closing Soon ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
   }
 }
 
 const closingTimes = [
-    { day: 1, times: ["12:27", "17:55", "23:25"] }, // Monday
-    { day: 2, times: ["12:27", "17:55", "23:25"] }, // Tuesday
-    { day: 3, times: ["12:27", "17:55", "23:25"] }, // Wednesday
-    { day: 4, times: ["12:25", "17:55", "23:25"] }, // Thursday
-    { day: 5, times: ["12:25", "17:55"] },          // Friday (No night market)
+  { day: 1, times: ["12:27", "17:55", "23:25"] }, // Monday
+  { day: 2, times: ["12:27", "17:55", "23:25"] }, // Tuesday
+  { day: 3, times: ["12:27", "17:55", "23:25"] }, // Wednesday
+  { day: 4, times: ["12:25", "17:55", "23:25"] }, // Thursday
+  { day: 5, times: ["12:25", "17:55"] },          // Friday (No night market)
 ];
 
 function canTrade() {
-    const now = moment().tz("Asia/Kuala_Lumpur");
-    const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
-    const currentTime = now.format('HH:mm');
+  const now = moment().tz("Asia/Kuala_Lumpur");
+  const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
 
-    const marketDay = closingTimes.find(day => day.day === currentDay);
-    if (!marketDay) return; // No market today (Saturday/Sunday)
+  const marketDay = closingTimes.find(day => day.day === currentDay);
+  if (!marketDay) return; // No market today (Saturday/Sunday)
 
-    marketDay.times.forEach(closingTime => {
-        const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
-        const diffMinutes = closingMoment.diff(now, 'minutes');
+  marketDay.times.forEach(closingTime => {
+    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
+    const diffMinutes = closingMoment.diff(now, 'minutes');
 
-        if (!(diffMinutes >= 0 && diffMinutes <= 5)) {
-            return;
-        }
-        return true;
-    });
+    if (!(diffMinutes >= 0 && diffMinutes <= 4)) {
+      return;
+    }
+    return true;
+  });
 }
 
 executeMarketEntryAction(workerData)

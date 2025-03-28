@@ -5,6 +5,9 @@ const helmet = require('helmet');
 const { Worker } = require('worker_threads');
 const app = express();
 
+const fs = require('fs');
+const CONTROL_FILE = './autoshutoff.control';
+
 // Middleware to set security HTTP headers
 app.use(helmet());
 
@@ -34,8 +37,16 @@ function spawnWorker(scriptPath, data) {
     });
 }
 
-app.get('/', (req,res)=>{
-    res.status(200).json({ message: 'server running' });
+app.get('/', (req, res) => {
+    let forceExitStatus;
+    if (fs.existsSync(CONTROL_FILE)) {
+        forceExitStatus = '✅ Auto Force Exit ON';
+    }
+    else {
+        forceExitStatus = '⛔ Auto Force Exit OFF';
+    }
+
+    res.status(200).json({ message: `server running, ${forceExitStatus}` });
 })
 
 // Define the POST /signal endpoint
@@ -51,9 +62,23 @@ app.post('/signal', async (req, res) => {
         console.log('Spawning worker for exit action...');
         await spawnWorker('./marketexit_worker.js', webhookData);
     }
-    
+
     res.status(200).json({ message: 'Webhook processed successfully!' });
 });
+
+app.get('/enableForceExit', (req, res) => {
+    fs.writeFileSync(CONTROL_FILE, 'ENABLED');
+    console.log('✅ Auto Force Exit ENABLED');
+    res.status(200).json({ message: '✅ Auto Force Exit ENABLED' });
+})
+
+app.get('/disableForceExit', (req, res) => {
+    if (fs.existsSync(CONTROL_FILE)) {
+        fs.unlinkSync(CONTROL_FILE);
+    }
+    console.log('⛔ Auto Force Exit Disabled');
+    res.status(200).json({ message: '⛔ Auto Force Exit Disabled' });
+})
 
 // Handle undefined routes (404)
 app.use((req, res, next) => {

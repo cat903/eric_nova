@@ -1,4 +1,6 @@
 const moment = require('moment-timezone');
+const fs = require('fs');
+const CONTROL_FILE = './autoshutoff.control';
 const getOpenPosition = require('./getOpenPosition.js');
 const marketOrder = require('./marketOrder.js');
 const getOrderHistory = require('./getOrderHistory.js');
@@ -58,7 +60,7 @@ async function executeForceMarketExitAction() {
     await delay(15000);
 
     const refreshedOpenPositions = await checkOpenPositions();
-    await processExitCompletion(action,tradeInfo.SeriesTradeCode, status, refreshedOpenPositions);
+    await processExitCompletion(action, tradeInfo.SeriesTradeCode, status, refreshedOpenPositions);
   }
 }
 
@@ -66,30 +68,33 @@ async function executeForceMarketExitAction() {
 
 // Market closing times
 const closingTimes = [
-    { day: 1, times: ["12:27", "17:55", "23:25"] }, // Monday
-    { day: 2, times: ["12:27", "17:55", "23:25"] }, // Tuesday
-    { day: 3, times: ["12:27", "17:55", "23:25"] }, // Wednesday
-    { day: 4, times: ["12:25", "17:55", "23:25"] }, // Thursday
-    { day: 5, times: ["12:25", "17:55"] },          // Friday (No night market)
+  { day: 1, times: ["12:27", "17:55", "23:25"] }, // Monday
+  { day: 2, times: ["12:27", "17:55", "23:25"] }, // Tuesday
+  { day: 3, times: ["12:27", "17:55", "23:25"] }, // Wednesday
+  { day: 4, times: ["12:25", "17:55", "23:25"] }, // Thursday
+  { day: 5, times: ["12:25", "17:55"] },          // Friday (No night market)
 ];
 
 function checkMarketClosing() {
-    const now = moment().tz("Asia/Kuala_Lumpur");
-    const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
-    const currentTime = now.format('HH:mm');
+  const now = moment().tz("Asia/Kuala_Lumpur");
+  const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
 
-    const marketDay = closingTimes.find(day => day.day === currentDay);
-    if (!marketDay) return; // No market today (Saturday/Sunday)
 
-    marketDay.times.forEach(closingTime => {
-        const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
-        const diffMinutes = closingMoment.diff(now, 'minutes');
+  const marketDay = closingTimes.find(day => day.day === currentDay);
+  if (!marketDay) return; // No market today (Saturday/Sunday)
+  if (!fs.existsSync(CONTROL_FILE)) {
+    console.log('Auto-shutoff DISABLED - skipping market closing check');
+    return;
+  }
+  marketDay.times.forEach(closingTime => {
+    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
+    const diffMinutes = closingMoment.diff(now, 'minutes');
 
-        if (diffMinutes >= 0 && diffMinutes <= 3) {
-            console.log(`Market closing soon (${closingTime}), calling close()...`);
-            executeForceMarketExitAction()
-        }
-    });
+    if (diffMinutes >= 0 && diffMinutes <= 3) {
+      console.log(`Market closing soon (${closingTime}), calling close()...`);
+      executeForceMarketExitAction()
+    }
+  });
 }
 
 // Run check every minute
