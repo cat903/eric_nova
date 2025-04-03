@@ -71,20 +71,21 @@ const closingTimes = [
 
 function canTrade() {
   const now = moment().tz("Asia/Kuala_Lumpur");
-  const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
-
+  const currentDay = now.isoWeekday();
   const marketDay = closingTimes.find(day => day.day === currentDay);
-  if (!marketDay) return; // No market today (Saturday/Sunday)
 
-  marketDay.times.forEach(closingTime => {
+  if (!marketDay) {
+    return false;
+  }
+
+  for (const closingTime of marketDay.times) {
     const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
     const diffMinutes = closingMoment.diff(now, 'minutes');
-
-    if (!(diffMinutes >= 0 && diffMinutes <= 4)) {
-      return;
+    if (diffMinutes >= 0 && diffMinutes <= 4) {
+      return false;
     }
-    return true;
-  });
+  }
+  return true;
 }
 
 executeMarketEntryAction(workerData)
