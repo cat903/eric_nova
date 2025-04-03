@@ -22,6 +22,7 @@ async function checkOpenPositions(retryn=3) {
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
     const errorMessage = `${retryn} demo nova server timed out, rejected force exit`;
     await logAndNotify(errorMessage);
+    await delay(10000);
     return checkOpenPositions(--retryn);
   }
   return openPositions;
@@ -55,8 +56,7 @@ async function executeForceMarketExitAction() {
   const status = tradeInfo?.OpenQuantity === '-1.0' ? 'sell' : 'buy';
 
   if (openPositions.length === 1) {
-    await marketOrder('buy', require('./config.json'), tradeInfo.SeriesCode);
-    await marketOrder('sell', require('./config.json'), tradeInfo.SeriesCode);
+    await marketOrder(action, require('./config.json'), tradeInfo.SeriesCode);
     await logAndNotify(`Asking For Force Exit ->-> ${action} ->-> ${tradeInfo.SeriesTradeCode}`);
     await delay(15000);
 
