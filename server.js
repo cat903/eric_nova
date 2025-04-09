@@ -1,6 +1,7 @@
 // server.js
 
 const express = require('express');
+const getOpenPosition = require('./getOpenPosition.js');
 const helmet = require('helmet');
 const { Worker } = require('worker_threads');
 const app = express();
@@ -78,6 +79,11 @@ app.get('/disableForceExit', (req, res) => {
     }
     console.log('⛔ Auto Force Exit Disabled');
     res.status(200).json({ message: '⛔ Auto Force Exit Disabled' });
+})
+
+app.get('/getOpenPosition', async (req, res) => {
+    const openPositions = await getOpenPosition(require('./config.json'));
+    res.status(200).json({ message: openPositions });
 })
 
 // Handle undefined routes (404)
