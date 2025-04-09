@@ -45,13 +45,12 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 }
 
 async function executeMarketExitAction(data) {
-  const openPositionList = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
-  if (!openPositionList) return;
-  const openPositions = openPositionList?.GetOpenPositionListResult?.Item1[0]?.OpenQuantity || openPositionList[0]?.OpenQuantity  
-  const entryStatus = (openPositions<0) ? 'sell' : 'buy';
-  const oppositeStatus = data.action !== entryStatus;
-  console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositionList.length >= 1}, procceding exit:${((openPositionList.length >= 1) && (oppositeStatus))}`);
-  if ((openPositionList.length >= 1) && (oppositeStatus)) {
+  const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+  if (!openPositions) return;
+  const entryStatus = (openPositions[0]?.OpenQuantity < 0) ? 'sell' : 'buy';
+  const oppositeStatus = data.action !== entryStatus
+  console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
+  if (openPositions.length === 1 && oppositeStatus) {
     await marketOrder(data.action, require('./config.json'), data.seriesCode);
     await logAndNotify(`Asking For Exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
     await delay(15000);
