@@ -46,8 +46,9 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 
 async function executeMarketExitAction(data) {
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
-  if (!openPositions) return;
-  if(!(openPositions[0]?.OpenQuantity)){console.log('nova changed something',openPositions)}; //remove later
+  if (!openPositions) {console.log('checkifsessioninvalid',openPositions);return 'sessionexpired in nova platform'} ;
+  if (openPositions.length===0) {return 'no open order in demonova platform'}
+  if (!(openPositions[0]?.OpenQuantity)){console.log('nova changed something',openPositions)}; //remove later
   const entryStatus = (openPositions[0]?.OpenQuantity < 0) ? 'sell' : 'buy';
   const oppositeStatus = data.action !== entryStatus
   console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
