@@ -47,7 +47,7 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 async function executeMarketExitAction(data) {
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
   if (!openPositions) return;
-  const entryStatus = (openPositions[0]?.OpenQuantity < 0) ? 'sell' : 'buy';
+  const entryStatus = (openPositions[0].OpenQuantity < 0) ? 'sell' : 'buy';
   const oppositeStatus = data.action !== entryStatus
   console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
   if (openPositions.length === 1 && oppositeStatus) {
