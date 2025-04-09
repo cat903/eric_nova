@@ -50,7 +50,9 @@ async function processExitCompletion(action, symbol, status, openPositions) {
 
 async function executeForceMarketExitAction() {
   const openPositions = await checkOpenPositions();
-  if (!openPositions) return;
+    if (!openPositions) {console.log('forceexit:checkifsessioninvalid',openPositions);console.log('forceexit:sessionexpired in nova platform')} ;
+  if (openPositions.length===0) {console.log('forceexit:no open order in demonova platform')}
+  if (!(openPositions[0]?.OpenQuantity)){console.log('forceexit:nova changed something',openPositions)}; //remove later
   const tradeInfo = openPositions[0]
   const action = (tradeInfo?.OpenQuantity < 0) ? 'buy' : 'sell';
   const status = (tradeInfo?.OpenQuantity < 0) ? 'sell' : 'buy';
