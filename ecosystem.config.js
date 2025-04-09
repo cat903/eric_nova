@@ -3,7 +3,7 @@ module.exports = {
         {
             name: 'autoupdateToken',
             script: './autoupdateToken.js',
-            cron_restart: '*/10 * * * *',
+            cron_restart: '*/5 * * * *',
             autorestart: false,
             watch: false
         },
@@ -16,7 +16,7 @@ module.exports = {
         {
             name: 'force_exit',
             script: './forceExitTrade.js',
-            cron_restart: '*/5 * * * *',
+            cron_restart: '*/2 * * * *',
             autorestart: false,
             watch: false
         }
