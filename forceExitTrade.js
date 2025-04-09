@@ -54,7 +54,7 @@ async function executeForceMarketExitAction() {
   const tradeInfo = openPositions[0]
   const action = (tradeInfo?.OpenQuantity < 0) ? 'buy' : 'sell';
   const status = (tradeInfo?.OpenQuantity < 0) ? 'sell' : 'buy';
-  console.log(`openStatus:${status},forceExitStatus:${action},positionOpen:${openPositions.length === 1}, proccedingForceExit:${((openPositions.length === 1) && (action!===status))}`);
+  console.log(`openStatus:${status},forceExitStatus:${action},positionOpen:${openPositions.length === 1}, proccedingForceExit:${((openPositions.length === 1) && (action!==status))}`);
   if (openPositions.length === 1) {
     await marketOrder(action, require('./config.json'), tradeInfo.SeriesCode);
     await logAndNotify(`Asking For Force Exit ->-> ${action} ->-> ${tradeInfo.SeriesTradeCode}`);
