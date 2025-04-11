@@ -18,7 +18,7 @@ async function checkOpenPositions(action, symbol, entryPrice,retryn=3) {
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
     const errorMessage = `${retryn} demo nova server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
-    await delay(10000);
+    await delay(5000);
     return checkOpenPositions(action, symbol, entryPrice,--retryn);
   }
   return openPositions;
