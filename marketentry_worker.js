@@ -13,12 +13,13 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
-async function checkOpenPositions(action, symbol, entryPrice) {
+async function checkOpenPositions(action, symbol, entryPrice,retryn=3) {
   const openPositions = await getOpenPosition(require('./config.json'));
-  if (openPositions?.length !== 0 && openPositions?.length !== 1) {
-    const errorMessage = `demo nova server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+  if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
+    const errorMessage = `${retryn} demo nova server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
-    return null;
+    await delay(10000);
+    return checkOpenPositions(action, symbol, entryPrice,--retryn);
   }
   return openPositions;
 }
