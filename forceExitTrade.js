@@ -93,7 +93,7 @@ function checkMarketClosing() {
     const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
     const diffMinutes = closingMoment.diff(now, 'minutes');
 
-    if (diffMinutes >= 0 && diffMinutes <= 3) {
+    if (diffMinutes >= 0 && diffMinutes <= 5) {
       console.log(`Market closing soon (${closingTime}), calling close()...`);
       executeForceMarketExitAction()
     }
