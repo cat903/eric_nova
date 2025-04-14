@@ -71,11 +71,11 @@ async function executeForceMarketExitAction() {
 
 // Market closing times
 const closingTimes = [
-  { day: 1, times: ["12:27", "17:55", "23:25"] }, // Monday
-  { day: 2, times: ["12:27", "17:55", "23:25"] }, // Tuesday
-  { day: 3, times: ["12:27", "17:55", "23:25"] }, // Wednesday
-  { day: 4, times: ["12:25", "17:55", "23:25"] }, // Thursday
-  { day: 5, times: ["12:25", "17:55"] },          // Friday (No night market)
+  { day: 1, times: ["12:30", "18:00", "23:30"] }, // Monday
+  { day: 2, times: ["12:30", "18:00", "23:30"] }, // Tuesday
+  { day: 3, times: ["12:30", "18:00", "23:30"] }, // Wednesday
+  { day: 4, times: ["12:30", "18:00", "23:30"] }, // Thursday
+  { day: 5, times: ["12:30", "18:00"] },          // Friday (No night market)
 ];
 
 function checkMarketClosing() {
