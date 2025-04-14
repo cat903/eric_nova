@@ -82,7 +82,7 @@ function canTrade() {
   for (const closingTime of marketDay.times) {
     const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
     const diffMinutes = closingMoment.diff(now, 'minutes');
-    if (diffMinutes >= 0 && diffMinutes <= 4) {
+    if (diffMinutes >= 0 && diffMinutes <= 6) {
       return false;
     }
   }
