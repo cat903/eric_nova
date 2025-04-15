@@ -133,10 +133,12 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
 
     echo ".env file updated successfully."
     
-    pm2 restart ecosystem.config.js
+    pm2 restart all
 
 else
     echo "Skipping .env file update. The existing .env file (if any) remains unchanged."
 fi
 
-echo "Script finished."
+clear
+
+echo "Script finished updating"
