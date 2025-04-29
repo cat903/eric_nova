@@ -82,7 +82,7 @@ app.get('/disableForceExit', (req, res) => {
 })
 
 app.get('/getOpenPosition', async (req, res) => {
-    const configData = await fs.readFile('./config.json', 'utf8');
+    const configData = await fs.readFileSync('./config.json', 'utf8');
     const config = JSON.parse(configData);
     const openPositions = await getOpenPosition(config);
     res.status(200).json({ message: openPositions });
