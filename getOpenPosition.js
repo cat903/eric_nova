@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
+require('dotenv').config();
 
-const url = 'https://demo.phillipmobile.com/MobileControlService.svc/GetOpenPositionList';
+const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOpenPositionList`;
 
 async function fetchWithRetry(url, headers, requestBody) {
   const maxRetryAttempts = 10;
@@ -37,7 +38,7 @@ const headers = {
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
   'X-Requested-With': 'XMLHttpRequest',
-   Referer: 'https://demo.phillipmobile.com/desktop/order_history_trade.html?v5',
+  'Referer': `https://${process.env.PLATFORM}.phillipmobile.com/desktop/order_history_trade.html?v5`,
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 

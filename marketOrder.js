@@ -1,6 +1,7 @@
 const fetch = require('node-fetch');
+require('dotenv').config();
 
-const url = 'https://demo.phillipmobile.com/MobileControlService.svc/PlaceFuturesOrder';
+const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/PlaceFuturesOrder`;
 
 const headers = {
   Accept: '*/*',
@@ -14,7 +15,7 @@ const headers = {
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
   'X-Requested-With': 'XMLHttpRequest',
-  Referer: 'https://demo.phillipmobile.com/desktop/order_placement.html?v5&SeriesCode=F.BMD.FCPO.H25&tabID=1',
+  'Referer': `https://${process.env.PLATFORM}.phillipmobile.com/desktop/order_placement.html?v5&SeriesCode=F.BMD.FCPO.H25&tabID=1`,
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 

@@ -5,6 +5,7 @@ const getOrderHistory = require('./getOrderHistory.js');
 const calculateProfitLoss = require('./calculateProfitLoss.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
+require('dotenv').config();
 
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -18,7 +19,7 @@ async function logAndNotify(message) {
 async function checkOpenPositions(action, symbol, entryPrice,retryn=3) {
   const openPositions = await getOpenPosition(require('./config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
-    const errorMessage = `${retryn} demo nova server timed out, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     await delay(5000);
     return checkOpenPositions(action, symbol, entryPrice,--retryn);
@@ -48,7 +49,7 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 async function executeMarketExitAction(data) {
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
   if (!openPositions) {console.log('checkifsessioninvalid',openPositions);return 'sessionexpired in nova platform'} ;
-  if (openPositions.length===0) {return 'no open order in demonova platform'}
+  if (openPositions.length===0) {return `no open order in ${process.env.PLATFORM} platform`}
   if (!(openPositions[0]?.OpenQuantity)){console.log('nova changed something',openPositions)}; //remove later
   const entryStatus = (openPositions[0]?.OpenQuantity < 0) ? 'sell' : 'buy';
   const oppositeStatus = data.action !== entryStatus

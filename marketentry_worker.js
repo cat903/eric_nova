@@ -3,6 +3,7 @@ const getOpenPosition = require('./getOpenPosition.js');
 const marketOrder = require('./marketOrder.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
+require('dotenv').config();
 
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -16,7 +17,7 @@ async function logAndNotify(message) {
 async function checkOpenPositions(action, symbol, entryPrice,retryn=3) {
   const openPositions = await getOpenPosition(require('./config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
-    const errorMessage = `${retryn} demo nova server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     await delay(5000);
     return checkOpenPositions(action, symbol, entryPrice,--retryn);

@@ -1,5 +1,6 @@
 const moment = require('moment-timezone');
 const fs = require('fs');
+require('dotenv').config();
 const CONTROL_FILE = './autoshutoff.control';
 const getOpenPosition = require('./getOpenPosition.js');
 const marketOrder = require('./marketOrder.js');
@@ -20,7 +21,7 @@ async function logAndNotify(message) {
 async function checkOpenPositions(retryn=3) {
   const openPositions = await getOpenPosition(require('./config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
-    const errorMessage = `${retryn} demo nova server timed out, rejected force exit`;
+    const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected force exit`;
     await logAndNotify(errorMessage);
     await delay(10000);
     return checkOpenPositions(--retryn);
@@ -51,7 +52,7 @@ async function processExitCompletion(action, symbol, status, openPositions) {
 async function executeForceMarketExitAction() {
   const openPositions = await checkOpenPositions();
     if (!openPositions) {console.log('forceexit:checkifsessioninvalid',openPositions);console.log('forceexit:sessionexpired in nova platform')} ;
-  if (openPositions.length===0) {console.log('forceexit:no open order in demonova platform')}
+  if (openPositions.length===0) {console.log(`forceexit:no open order in ${process.env.PLATFORM} platform`)}
   if (!(openPositions[0]?.OpenQuantity)){console.log('forceexit:nova changed something',openPositions)}; //remove later
   const tradeInfo = openPositions[0]
   const action = (tradeInfo?.OpenQuantity < 0) ? 'buy' : 'sell';

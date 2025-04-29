@@ -19,9 +19,9 @@ read PASSWORD
 stty echo
 echo ""
 read -r -p "Please enter your Discord webhook: " DISCORD
-
+read -r -p "Please enter Desired Platform Code: " PLATFORM
 # Validate inputs
-if [[ -z "$USERNAME" || -z "$PASSWORD" || -z "$DISCORD" ]]; then
+if [[ -z "$USERNAME" || -z "$PASSWORD" || -z "$DISCORD"  || -z "$PLATFORM"]]; then
   echo "Error: All fields are required."
   exit 1
 fi
@@ -32,6 +32,7 @@ echo "Creating .env file..."
   echo "USERE=$USERNAME"
   echo "USERP=$PASSWORD"
   echo "DISCORDWEBHOOK=$DISCORD"
+  echo "PLATFORM=$PLATFORM"
 } > .env
 
 echo ".env file created successfully."
