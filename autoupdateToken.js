@@ -1,7 +1,7 @@
 require('dotenv').config();
 const fetch = require('node-fetch');
 
-const url = 'https://demo.phillipmobile.com/MobileControlService.svc/GetOpenPositionList';
+const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOpenPositionList`;
 
 const headers = {
   'Accept': '*/*',
@@ -15,7 +15,7 @@ const headers = {
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
   'X-Requested-With': 'XMLHttpRequest',
-  'Referer': 'https://demo.phillipmobile.com/desktop/order_history_trade.html?v5',
+  'Referer': `https://${process.env.PLATFORM}.phillipmobile.com/desktop/order_history_trade.html?v5`,
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
@@ -40,9 +40,16 @@ async function getOpenPositionList(config) {
 };
 
 (async function () {
+  let authURL;
   const openPositions = await getOpenPositionList(require('./config.json'));
   if(openPositions.title === 'Unauthorized'){
-    const response = await fetch('https://z34vshibtebtaneovwkqpe5vme0hkexs.lambda-url.eu-north-1.on.aws/',{
+    if(process.env.PLATFORM==='demo'){
+      authURL = 'https://z34vshibtebtaneovwkqpe5vme0hkexs.lambda-url.eu-north-1.on.aws/'
+    }
+    else{
+      authURL = 'https://7xsskotpbpeuyqmim4f3wl4j4i0qvtuu.lambda-url.eu-north-1.on.aws/'
+    }
+    const response = await fetch(authURL,{
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
