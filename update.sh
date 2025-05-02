@@ -121,6 +121,8 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
 
     read -r -p "Please enter your Discord webhook URL: " DISCORD
 
+     read -r -p "Please enter your Desired Platform: " PLATFORM
+
     echo "Creating/Overwriting .env file with new credentials..."
     # WARNING: This overwrites the entire .env file. Any other variables
     # previously in .env (restored from backup) will be lost unless added here.
@@ -128,6 +130,7 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
       echo "USERE=$USERNAME"
       echo "USERP=$PASSWORD"
       echo "DISCORDWEBHOOK=$DISCORD"
+      echo "PLATFORM=$PLATFORM"
       # Add any other essential default variables here if needed
     } > "$ENV_FILE" # Ensure this writes to the correct .env file path in the current directory
 
