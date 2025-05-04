@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const fetch = require('node-fetch');
+
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOrderHistory`;
 
