@@ -121,7 +121,7 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
 
     read -r -p "Please enter your Discord webhook URL: " DISCORD
 
-     read -r -p "Please enter your Desired Platform: " PLATFORM
+    read -r -p "Please enter your Desired Platform: " PLATFORM
 
     echo "Creating/Overwriting .env file with new credentials..."
     # WARNING: This overwrites the entire .env file. Any other variables
