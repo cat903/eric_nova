@@ -10,9 +10,9 @@ async function fetchWithRetry(url, headers, requestBody) {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers:headers,
-        body:JSON.stringify(requestBody),
-        signal:AbortSignal.timeout(15000)
+        headers: headers,
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(15000)
       });
       const result = (await response.json());
       const openPositions = result.GetOpenPositionListResult.Item1;
@@ -27,10 +27,10 @@ async function fetchWithRetry(url, headers, requestBody) {
 }
 
 const headers = {
-   Accept: '*/*',
+  Accept: '*/*',
   'Accept-Language': 'en-US,en;q=0.9',
   'Content-Type': 'application/json',
-   Priority: 'u=1, i',
+  Priority: 'u=1, i',
   'Sec-CH-UA': '"Microsoft Edge";v="131", "Chromium";v="131", "Not_A Brand";v="24"',
   'Sec-CH-UA-Mobile': '?0',
   'Sec-CH-UA-Platform': '"Windows"',
@@ -48,17 +48,16 @@ const requestBody = {
   SubAccount: null,
 };
 
-
 async function getOpenPositionList(config) {
-  headers['X-Session-IV'] = config.xSessionIv;
+  headers['Cookie'] = config.xSessionIv;
   requestBody.Token = config.token;
-  const response = await fetchWithRetry(url,headers,requestBody);
+  const response = await fetchWithRetry(url, headers, requestBody);
   return response;
 };
 
-// (async function () {
-//   const openPositions = await getOpenPositionList();
-//   console.log(openPositions.length === 0)
-// })()
+(async function () {
+  const openPositions = await getOpenPositionList(require('../config.json'));
+  console.log(openPositions)
+})()
 
-module.exports = getOpenPositionList
+//module.exports = getOpenPositionList

@@ -19,7 +19,7 @@ async function logAndNotify(message) {
 }
 
 async function checkOpenPositions(retryn=3) {
-  const openPositions = await getOpenPosition(require('./config.json'));
+  const openPositions = await getOpenPosition(require('../config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
     const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected force exit`;
     await logAndNotify(errorMessage);
@@ -33,7 +33,7 @@ async function checkOpenPositions(retryn=3) {
 async function processExitCompletion(action, symbol, status, openPositions) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const orderHistory = await getOrderHistory(require('./config.json'));
+    const orderHistory = await getOrderHistory(require('../config.json'));
     const profitLoss = calculateProfitLoss(orderHistory, status);
     const successMessage = `${timestamp} ->-> filled force exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
     await logAndNotify(successMessage);
@@ -59,7 +59,7 @@ async function executeForceMarketExitAction() {
   const status = (tradeInfo?.OpenQuantity < 0) ? 'sell' : 'buy';
   console.log(`openStatus:${status},forceExitStatus:${action},positionOpen:${openPositions.length === 1}, proccedingForceExit:${((openPositions.length === 1) && (action!==status))}`);
   if (openPositions.length === 1) {
-    await marketOrder(action, require('./config.json'), tradeInfo.SeriesCode);
+    await marketOrder(action, require('../config.json'), tradeInfo.SeriesCode);
     await logAndNotify(`Asking For Force Exit ->-> ${action} ->-> ${tradeInfo.SeriesTradeCode}`);
     await delay(15000);
 

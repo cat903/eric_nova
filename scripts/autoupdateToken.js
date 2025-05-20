@@ -1,5 +1,6 @@
 require('dotenv').config();
 const fetch = require('node-fetch');
+const authorizeSession = require('./authorizeSession.js')
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOpenPositionList`;
 
@@ -40,26 +41,9 @@ async function getOpenPositionList(config) {
 };
 
 (async function () {
-  let authURL;
-  const openPositions = await getOpenPositionList(require('./config.json'));
+  const openPositions = await getOpenPositionList(require('../config.json'));
   if(openPositions.title === 'Unauthorized'){
-    if(process.env.PLATFORM==='demo'){
-      authURL = 'https://z34vshibtebtaneovwkqpe5vme0hkexs.lambda-url.eu-north-1.on.aws/'
-    }
-    else{
-      authURL = 'https://7xsskotpbpeuyqmim4f3wl4j4i0qvtuu.lambda-url.eu-north-1.on.aws/'
-    }
-    const response = await fetch(authURL,{
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        user:process.env.USERE,
-        pass:process.env.USERP
-      })
-    });
-    const result = await response.json();
+    const result = await authorizeSession(process.env.USERE,process.env.USERP,process.env.PLATFORM)
     console.log(result);
     require('fs').writeFileSync('config.json',JSON.stringify(result))
   }

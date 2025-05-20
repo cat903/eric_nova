@@ -1,7 +1,7 @@
 // server.js
 
 const express = require('express');
-const getOpenPosition = require('./getOpenPosition.js');
+const getOpenPosition = require('./scripts/getOpenPosition.js');
 const helmet = require('helmet');
 const { Worker } = require('worker_threads');
 const app = express();

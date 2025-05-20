@@ -16,13 +16,13 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
-async function checkOpenPositions(action, symbol, entryPrice,retryn=3) {
-  const openPositions = await getOpenPosition(require('./config.json'));
+async function checkOpenPositions(action, symbol, entryPrice, retryn = 3) {
+  const openPositions = await getOpenPosition(require('../config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
     const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     await delay(5000);
-    return checkOpenPositions(action, symbol, entryPrice,--retryn);
+    return checkOpenPositions(action, symbol, entryPrice, --retryn);
   }
   return openPositions;
 }
@@ -30,7 +30,7 @@ async function checkOpenPositions(action, symbol, entryPrice,retryn=3) {
 async function processExitCompletion(action, symbol, entryPrice, status, openPositions) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const orderHistory = await getOrderHistory(require('./config.json'));
+    const orderHistory = await getOrderHistory(require('../config.json'));
     const profitLoss = calculateProfitLoss(orderHistory, status);
     const successMessage = `${timestamp} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
     await logAndNotify(successMessage);
@@ -47,21 +47,25 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 }
 
 async function executeMarketExitAction(data) {
+  await logAndNotify(`Asking For Exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
-  if (!openPositions) {console.log('checkifsessioninvalid',openPositions);return 'sessionexpired in nova platform'} ;
-  if (openPositions.length===0) {return `no open order in ${process.env.PLATFORM} platform`}
-  if (!(openPositions[0]?.OpenQuantity)){console.log('nova changed something',openPositions)}; //remove later
+  if (!openPositions) { console.log('checkifsessioninvalid', openPositions); return 'sessionexpired in nova platform' };
+  if (openPositions.length === 0) { return `no open order in ${process.env.PLATFORM} platform` }
+  if (!(openPositions[0]?.OpenQuantity)) { console.log('nova changed something', openPositions) }; //remove later
   const entryStatus = (openPositions[0]?.OpenQuantity < 0) ? 'sell' : 'buy';
   const oppositeStatus = data.action !== entryStatus
   console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
   if (openPositions.length === 1 && oppositeStatus) {
-    await marketOrder(data.action, require('./config.json'), data.seriesCode);
-    await logAndNotify(`Asking For Exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-    await delay(15000);
-
-    const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
-    if (!refreshedOpenPositions) return;
-
+    await marketOrder(data.action, require('../config.json'), data.seriesCode, data.lotSize);
+    let refreshedOpenPositions = null;
+    for (let i = 0; i < 5; i++) {
+      refreshedOpenPositions = await checkOpenPositions(action, symbol, entryPrice, 0);
+      if (refreshedOpenPositions && refreshedOpenPositions.length === 0) {
+        break;
+      }
+      await delay(3000);
+    }
+    if (!refreshedOpenPositions) return 'Exit action failed: could not get refreshed open positions';
     await processExitCompletion(data.action, data.symbol, data.entryPrice, entryStatus, refreshedOpenPositions);
   }
 }

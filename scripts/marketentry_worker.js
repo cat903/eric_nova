@@ -14,13 +14,13 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
-async function checkOpenPositions(action, symbol, entryPrice,retryn=3) {
-  const openPositions = await getOpenPosition(require('./config.json'));
+async function checkOpenPositions(action, symbol, entryPrice, retryn = 3) {
+  const openPositions = await getOpenPosition(require('../config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
     const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected action ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     await delay(5000);
-    return checkOpenPositions(action, symbol, entryPrice,--retryn);
+    return checkOpenPositions(action, symbol, entryPrice, --retryn);
   }
   return openPositions;
 }
@@ -38,6 +38,7 @@ async function processEntryCompletion(action, symbol, entryPrice, openPositions)
 }
 
 async function executeMarketEntryAction(data) {
+  await logAndNotify(`Asking For Entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
   const allowedtoEnterMarket = canTrade();
   if (allowedtoEnterMarket) {
     const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
@@ -45,20 +46,23 @@ async function executeMarketEntryAction(data) {
     if (!openPositions) return 'Entry action failed: could not get open positions';
 
     if (openPositions.length === 0) {
-      await marketOrder(data.action, require('./config.json'), data.seriesCode);
-      await logAndNotify(`Asking For Entry ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-      await delay(15000);
-
-      const refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+      await marketOrder(data.action, require('../config.json'), data.seriesCode, data.lotSize);
+      let refreshedOpenPositions = null;
+      for (let i = 0; i < 5; i++) {
+        refreshedOpenPositions = await checkOpenPositions(action, symbol, entryPrice, 0);
+        if (refreshedOpenPositions && refreshedOpenPositions.length > 0) {
+          break;
+        }
+        await delay(3000);
+      }
       if (!refreshedOpenPositions) return 'Entry action failed: could not get refreshed open positions';
-
       const success = await processEntryCompletion(data.action, data.symbol, data.entryPrice, refreshedOpenPositions);
       return success ? 'Entry attempt completed successfully!' : 'Entry attempt failed: could not fill the order';
     }
 
     return 'Entry action not required: position already open';
   }
-  else{
+  else {
     await logAndNotify(`Entry Rejected Market Closing Soon ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
   }
 }

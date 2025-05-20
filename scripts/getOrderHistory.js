@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-
+require('dotenv').config();
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOrderHistory`;
 
@@ -28,7 +28,7 @@ const requestBody = {
 
 async function getOrderHistory(config) {
   requestBody.Token = config.token;
-  headers['X-Session-IV'] = config.xSessionIv;
+  headers['Cookie'] = config.xSessionIv;
   const response = await fetch(url, {
     method: 'POST',
     headers: headers,
@@ -40,7 +40,7 @@ async function getOrderHistory(config) {
 };
 
 // (async function(){
-//    const orderHistory = await getOrderHistory();
+//    const orderHistory = await getOrderHistory(require('./config.json'));
 //    console.log(orderHistory)
 // })();
 

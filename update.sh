@@ -10,6 +10,7 @@ PROJECT_DIR="eric_nova"
 ENV_FILE=".env"
 BACKUP_ENV_FILE=".env.bak"
 REPO_URL="https://github.com/cat903/eric_nova.git"
+AUTOSHUTSTATUS="autoshutoff.control"
 
 # --- Backup ---
 # Check if the project directory and .env file exist
@@ -19,6 +20,14 @@ if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/$ENV_FILE" ]; then
     cp -p "$PROJECT_DIR/$ENV_FILE" "$BACKUP_ENV_FILE"
 else
     echo "No existing $PROJECT_DIR/$ENV_FILE found to back up."
+fi
+
+if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/$AUTOSHUTSTATUS" ]; then
+    echo "Backing up existing $AUTOSHUTSTATUS file from $AUTOSHUTSTATUS/ to ~/$AUTOSHUTSTATUS..."
+    # Use -p to preserve permissions and ownership if possible
+    cp -p "$PROJECT_DIR/$AUTOSHUTSTATUS" "$AUTOSHUTSTATUS"
+else
+    echo "No existing $PROJECT_DIR/$AUTOSHUTSTATUS found to back up."
 fi
 
 # --- Cleanup ---
@@ -38,6 +47,16 @@ if [ -f "../$BACKUP_ENV_FILE" ]; then
     mv "../$BACKUP_ENV_FILE" "$ENV_FILE"
 else
     echo "No backup file (~/$BACKUP_ENV_FILE) found to restore."
+    # Optional: Create an empty .env if no backup exists and one is always needed
+    # touch "$ENV_FILE"
+    # echo "Created an empty $ENV_FILE as no backup was found."
+fi
+
+if [ -f "../$AUTOSHUTSTATUS" ]; then
+    echo "Restoring $AUTOSHUTSTATUS from backup..."
+    mv "../$AUTOSHUTSTATUS" "$AUTOSHUTSTATUS"
+else
+    echo "No backup file (~/$AUTOSHUTSTATUS) found to restore."
     # Optional: Create an empty .env if no backup exists and one is always needed
     # touch "$ENV_FILE"
     # echo "Created an empty $ENV_FILE as no backup was found."
