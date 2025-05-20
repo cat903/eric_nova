@@ -38,7 +38,7 @@ const requestBody = {
 async function marketOrder(orderType,config,seriesCode,orderQuantity) {
   requestBody.Order.AccountNo = config.token;
   requestBody.Order.SeriesCode = seriesCode;
-  requestBody.Order.OrderQuantity = orderQuantity;
+  requestBody.Order.OrderQuantity = orderQuantity || 1;
   headers['Cookie'] = config.xSessionIv;
   const action = orderType==='buy'? 1 : 2;
   requestBody.Order.BuySell = action;
