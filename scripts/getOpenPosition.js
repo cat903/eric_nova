@@ -55,9 +55,9 @@ async function getOpenPositionList(config) {
   return response;
 };
 
-(async function () {
-  const openPositions = await getOpenPositionList(require('../config.json'));
-  console.log(openPositions)
-})()
+// (async function () {
+//   const openPositions = await getOpenPositionList(require('../config.json'));
+//   console.log(openPositions)
+// })()
 
-//module.exports = getOpenPositionList
+module.exports = getOpenPositionList
