@@ -1,13 +1,13 @@
 **COMMAND FOR UPDATE**
 ```bash
-curl -o update.sh https://raw.githubusercontent.com/ericyong81/installationfiles/main/eric_nova-main/update.sh
+curl -o update.sh https://raw.githubusercontent.com/cat903/eric_nova/refs/heads/main/update.sh
 chmod +x update.sh
 ./update.sh
 
 ```
 **COMMAND FOR INSTALLATION**
 ```bash
-curl -o setup.sh https://raw.githubusercontent.com/ericyong81/installationfiles/main/eric_nova-main/setup.sh
+curl -o setup.sh https://raw.githubusercontent.com/cat903/eric_nova/refs/heads/main/setup.sh
 chmod +x setup.sh
 ./setup.sh
 ```
