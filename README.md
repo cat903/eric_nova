@@ -11,3 +11,10 @@ curl -o setup.sh https://raw.githubusercontent.com/ericyong81/installationfiles/
 chmod +x setup.sh
 ./setup.sh
 ```
+**CONFIGURE YOUR ENVIRONMENT VARIABLES**
+```
+USERE=`Your Username`
+USERP=`Your Password`
+DISCORDWEBHOOK=`Your Discord Webhook Url`
+PLATFORM=`Platform`  (onenovaweb || demo)
+```
