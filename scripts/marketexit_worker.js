@@ -16,10 +16,10 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
-async function checkOpenPositions(action, symbol, entryPrice, retryn = 3) {
+async function checkOpenPositions(action, symbol, entryPrice, retryn = 3, algoName) {
   const openPositions = await getOpenPosition(require('../config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
-    const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected exit ->-> ${algoName} ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     await delay(5000);
     return checkOpenPositions(action, symbol, entryPrice, --retryn);
@@ -27,19 +27,19 @@ async function checkOpenPositions(action, symbol, entryPrice, retryn = 3) {
   return openPositions;
 }
 
-async function processExitCompletion(action, symbol, entryPrice, status, openPositions) {
+async function processExitCompletion(action, symbol, entryPrice, status, openPositions,algoName) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
     const orderHistory = await getOrderHistory(require('../config.json'));
     const profitLoss = calculateProfitLoss(orderHistory, status);
-    const successMessage = `${timestamp} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
+    const successMessage = `${timestamp} ->-> ${algoName} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
     await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
     await logAndNotify(profitLossMessage);
     console.log('Exit action completed successfully');
     return true;
   } else {
-    const failureMessage = `Could not fill exit order, rejected exit ->-> ${action} ->-> ${symbol}@${entryPrice}`;
+    const failureMessage = `Could not fill exit order, rejected exit ->-> ${algoName} ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(failureMessage);
     console.log('Exit action failed, market order failed');
     return false;
@@ -47,7 +47,7 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 }
 
 async function executeMarketExitAction(data) {
-  await logAndNotify(`Asking For Exit ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
+  await logAndNotify(`Asking For Exit ->-> ${data?.algoName} ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
   if (!openPositions) { console.log('checkifsessioninvalid', openPositions); return 'sessionexpired in nova platform' };
   if (openPositions.length === 0) { return `no open order in ${process.env.PLATFORM} platform` }
@@ -66,7 +66,7 @@ async function executeMarketExitAction(data) {
       await delay(3000);
     }
     if (!refreshedOpenPositions) return 'Exit action failed: could not get refreshed open positions';
-    await processExitCompletion(data.action, data.symbol, data.entryPrice, entryStatus, refreshedOpenPositions);
+    await processExitCompletion(data.action, data.symbol, data.entryPrice, entryStatus, refreshedOpenPositions,data?.algoName);
   }
 }
 
