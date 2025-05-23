@@ -61,7 +61,7 @@ app.post('/signal', async (req, res) => {
     }
     if (webhookData.type === '0') {
         console.log('Spawning worker for exit action...');
-        await spawnWorker('./scripts/marketentry_worker.js', webhookData);
+        await spawnWorker('./scripts/marketexit_worker.js', webhookData);
     }
 
     res.status(200).json({ message: 'Webhook processed successfully!' });
