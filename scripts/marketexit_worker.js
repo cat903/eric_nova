@@ -59,7 +59,7 @@ async function executeMarketExitAction(data) {
     await marketOrder(data?.action, require('../config.json'), data?.seriesCode, data?.lotSize);
     let refreshedOpenPositions = null;
     for (let i = 0; i < 5; i++) {
-      refreshedOpenPositions = await checkOpenPositions(data.action, symbol, entryPrice, 0, data?.algoName);
+      refreshedOpenPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice, 0, data?.algoName);
       if (refreshedOpenPositions && refreshedOpenPositions.length === 0) {
         break;
       }
