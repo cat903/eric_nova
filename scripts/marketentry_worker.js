@@ -20,7 +20,7 @@ async function checkOpenPositions(action, symbol, entryPrice, retryn = 3, algoNa
     const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected action ->-> ${algoName} ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     await delay(5000);
-    return checkOpenPositions(action, symbol, entryPrice, --retryn);
+    return checkOpenPositions(action, symbol, entryPrice, --retryn, algoName);
   }
   return openPositions;
 }
@@ -40,7 +40,7 @@ async function executeMarketEntryAction(data) {
   await logAndNotify(`Asking For Entry ->-> ${data?.algoName} ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
   const allowedtoEnterMarket = canTrade();
   if (allowedtoEnterMarket) {
-    const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+    const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice, undefined, data?.algoName);
 
     if (!openPositions) return 'Entry action failed: could not get open positions';
 
@@ -48,7 +48,7 @@ async function executeMarketEntryAction(data) {
       await marketOrder(data.action, require('../config.json'), data.seriesCode, data.lotSize);
       let refreshedOpenPositions = null;
       for (let i = 0; i < 5; i++) {
-        refreshedOpenPositions = await checkOpenPositions(action, symbol, entryPrice, 0, data?.algoName);
+        refreshedOpenPositions = await checkOpenPositions(data.action, symbol, entryPrice, 0, data?.algoName);
         if (refreshedOpenPositions && refreshedOpenPositions.length > 0) {
           break;
         }

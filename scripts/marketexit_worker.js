@@ -22,7 +22,7 @@ async function checkOpenPositions(action, symbol, entryPrice, retryn = 3, algoNa
     const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected exit ->-> ${algoName} ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(errorMessage);
     await delay(5000);
-    return checkOpenPositions(action, symbol, entryPrice, --retryn);
+    return checkOpenPositions(action, symbol, entryPrice, --retryn,algoName);
   }
   return openPositions;
 }
@@ -48,7 +48,7 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 
 async function executeMarketExitAction(data) {
   await logAndNotify(`Asking For Exit ->-> ${data?.algoName} ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
-  const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice);
+  const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice,undefined,data?.algoName);
   if (!openPositions) { console.log('checkifsessioninvalid', openPositions); return 'sessionexpired in nova platform' };
   if (openPositions.length === 0) { return `no open order in ${process.env.PLATFORM} platform` }
   if (!(openPositions[0]?.OpenQuantity)) { console.log('nova changed something', openPositions) }; //remove later
@@ -56,10 +56,10 @@ async function executeMarketExitAction(data) {
   const oppositeStatus = data.action !== entryStatus
   console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
   if (openPositions.length === 1 && oppositeStatus) {
-    await marketOrder(data.action, require('../config.json'), data.seriesCode, data.lotSize);
+    await marketOrder(data?.action, require('../config.json'), data?.seriesCode, data?.lotSize);
     let refreshedOpenPositions = null;
     for (let i = 0; i < 5; i++) {
-      refreshedOpenPositions = await checkOpenPositions(action, symbol, entryPrice, 0);
+      refreshedOpenPositions = await checkOpenPositions(data.action, symbol, entryPrice, 0, data?.algoName);
       if (refreshedOpenPositions && refreshedOpenPositions.length === 0) {
         break;
       }
