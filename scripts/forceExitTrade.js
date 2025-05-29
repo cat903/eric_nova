@@ -18,6 +18,28 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
+async function getConfirmedOrderHistoryWithRetry(config, expectedSymbol, expectedAction, algoName, maxRetries = 6, retryDelayMs = 5000) {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      const orderHistory = await getOrderHistory(config);
+      if (orderHistory && orderHistory.length > 0) {
+        const relevantOrder = orderHistory.find(order => order.Symbol === expectedSymbol && (order.BuySell === (expectedAction === 'buy' ? 1 : 2)) && order.OrderStatusDesc === 'Filled');
+        if (relevantOrder) {
+          if (orderHistory.length >= 2) {
+            return orderHistory;
+          }
+        }
+      }
+    } catch (error) {
+      await logAndNotify(`Error fetching order history for ${algoName} on attempt ${attempt}: ${error.message}`);
+    }
+    if (attempt < maxRetries) {
+      await delay(retryDelayMs);
+    }
+  }
+  return null;
+}
+
 async function checkOpenPositions(retryn=3) {
   const openPositions = await getOpenPosition(require('../config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
@@ -33,8 +55,13 @@ async function checkOpenPositions(retryn=3) {
 async function processExitCompletion(action, symbol, status, openPositions) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const orderHistory = await getOrderHistory(require('../config.json'));
-    const profitLoss = calculateProfitLoss(orderHistory, status);
+    const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), symbol, action, algoName);
+    if (!confirmedOrderHistory) {
+      const failureMessage = `${timestamp} ->-> ${algoName} ->-> Exit for ${symbol} appears complete (no open positions), but FAILED TO CONFIRM in order history. P/L calculation SKIPPED.`;
+      await logAndNotify(failureMessage);
+      return true;
+    }
+    const profitLoss = calculateProfitLoss(confirmedOrderHistory, status);
     const successMessage = `${timestamp} ->-> filled force exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
     await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
