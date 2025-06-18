@@ -39,9 +39,9 @@ async function getOrderHistory(config) {
   return orderHistory
 };
 
-// (async function(){
-//    const orderHistory = await getOrderHistory(require('./config.json'));
-//    console.log(orderHistory)
-// })();
+(async function(){
+   const orderHistory = await getOrderHistory(require('../config.json'));
+   console.log(orderHistory)
+})();
 
-module.exports = getOrderHistory
+// module.exports = getOrderHistory
