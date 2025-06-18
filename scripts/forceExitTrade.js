@@ -18,12 +18,12 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
-async function getConfirmedOrderHistoryWithRetry(config, expectedSymbol, expectedAction, algoName, maxRetries = 6, retryDelayMs = 5000) {
+async function getConfirmedOrderHistoryWithRetry(config, expectedAction, algoName, seriesCode, maxRetries = 6, retryDelayMs = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const orderHistory = await getOrderHistory(config);
       if (orderHistory && orderHistory.length > 0) {
-        const relevantOrder = orderHistory.find(order => order.Symbol === expectedSymbol && (order.BuySell === (expectedAction === 'buy' ? 1 : 2)) && order.OrderStatusDesc === 'Filled');
+        const relevantOrder = orderHistory.find(order => order.SeriesCode === seriesCode && (order.BuySell === (expectedAction === 'buy' ? 1 : 2)) && order.OrderStatusDesc === 'Filled');
         if (relevantOrder) {
           if (orderHistory.length >= 2) {
             return orderHistory;
@@ -52,10 +52,10 @@ async function checkOpenPositions(retryn=3) {
 }
 
 
-async function processExitCompletion(action, symbol, status, openPositions) {
+async function processExitCompletion(action, symbol, status, openPositions,seriesCode) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), symbol, action, algoName);
+    const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), action, algoName, seriesCode);
     if (!confirmedOrderHistory) {
       const failureMessage = `${timestamp} ->-> ${algoName} ->-> Exit for ${symbol} appears complete (no open positions), but FAILED TO CONFIRM in order history. P/L calculation SKIPPED.`;
       await logAndNotify(failureMessage);
@@ -91,7 +91,7 @@ async function executeForceMarketExitAction() {
     await delay(15000);
 
     const refreshedOpenPositions = await checkOpenPositions();
-    await processExitCompletion(action, tradeInfo.SeriesTradeCode, status, refreshedOpenPositions);
+    await processExitCompletion(action, tradeInfo.SeriesTradeCode, status, refreshedOpenPositions,tradeInfo.SeriesCode);
   }
 }
 
