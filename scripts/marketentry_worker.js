@@ -1,8 +1,8 @@
 const { parentPort, workerData } = require('worker_threads');
+const moment = require('moment-timezone');
 const getOpenPosition = require('./getOpenPosition.js');
 const marketOrder = require('./marketOrder.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
-const moment = require('moment-timezone');
 require('dotenv').config();
 
 async function delay(time) {
@@ -27,7 +27,7 @@ async function checkOpenPositions(action, symbol, entryPrice, retryn = 3, algoNa
 
 async function processEntryCompletion(action, symbol, entryPrice, openPositions, algoName) {
   if (openPositions.length === 1) {
-    const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
+    const timestamp = moment().tz('Asia/Kuala_Lumpur').format('YYYY-MM-DD HH:mm:ss');
     const successMessage = `${timestamp} ->-> ${algoName} ->-> filled entry ->-> ${action} ->-> ${symbol}@${openPositions[0].AveragePrice}`;
     await logAndNotify(successMessage);
     console.log('Entry filled successfully!');
@@ -61,30 +61,29 @@ async function executeMarketEntryAction(data) {
 
     return 'Entry action not required: position already open';
   }
-  else {
-    await logAndNotify(`Entry Rejected Market Closing Soon ->-> ${data?.algoName} ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
-  }
+
+  await logAndNotify(`Entry Rejected Market Closing Soon ->-> ${data?.algoName} ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice}`);
 }
 
 const closingTimes = [
-  { day: 1, times: ["12:30", "18:00", "23:30"] }, // Monday
-  { day: 2, times: ["12:30", "18:00", "23:30"] }, // Tuesday
-  { day: 3, times: ["12:30", "18:00", "23:30"] }, // Wednesday
-  { day: 4, times: ["12:30", "18:00", "23:30"] }, // Thursday
-  { day: 5, times: ["12:30", "18:00"] },          // Friday (No night market)
+  { day: 1, times: ['12:30', '18:00', '23:30'] }, // Monday
+  { day: 2, times: ['12:30', '18:00', '23:30'] }, // Tuesday
+  { day: 3, times: ['12:30', '18:00', '23:30'] }, // Wednesday
+  { day: 4, times: ['12:30', '18:00', '23:30'] }, // Thursday
+  { day: 5, times: ['12:30', '18:00'] }, // Friday (No night market)
 ];
 
 function canTrade() {
-  const now = moment().tz("Asia/Kuala_Lumpur");
+  const now = moment().tz('Asia/Kuala_Lumpur');
   const currentDay = now.isoWeekday();
-  const marketDay = closingTimes.find(day => day.day === currentDay);
+  const marketDay = closingTimes.find((day) => day.day === currentDay);
 
   if (!marketDay) {
     return false;
   }
 
   for (const closingTime of marketDay.times) {
-    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
+    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, 'Asia/Kuala_Lumpur');
     const diffMinutes = closingMoment.diff(now, 'minutes');
     if (diffMinutes >= 0 && diffMinutes <= 6) {
       return false;

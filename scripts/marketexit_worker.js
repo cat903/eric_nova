@@ -1,10 +1,10 @@
 const { parentPort, workerData } = require('worker_threads');
+const moment = require('moment-timezone');
 const getOpenPosition = require('./getOpenPosition.js');
 const marketOrder = require('./marketOrder.js');
 const getOrderHistory = require('./getOrderHistory.js');
 const calculateProfitLoss = require('./calculateProfitLoss.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
-const moment = require('moment-timezone');
 require('dotenv').config();
 
 async function delay(time) {
@@ -21,7 +21,7 @@ async function getConfirmedOrderHistoryWithRetry(config, expectedAction, algoNam
     try {
       const orderHistory = await getOrderHistory(config);
       if (orderHistory && orderHistory.length > 0) {
-        const relevantOrder = orderHistory.find(order => order.SeriesCode === seriesCode && (order.BuySell === (expectedAction === 'buy' ? 1 : 2)) && order.OrderStatusDesc === 'Filled');
+        const relevantOrder = orderHistory.find((order) => order.SeriesCode === seriesCode && (order.BuySell === (expectedAction === 'buy' ? 1 : 2)) && order.OrderStatusDesc === 'Filled');
         if (relevantOrder) {
           if (orderHistory.length >= 2) {
             return orderHistory;
@@ -49,38 +49,37 @@ async function checkOpenPositions(action, symbol, entryPrice, retryn = 3, algoNa
   return openPositions;
 }
 
-async function processExitCompletion(action, symbol, entryPrice, status, openPositions, algoName,seriesCode) {
+async function processExitCompletion(data, status, openPositions) {
   if (!openPositions?.length) {
-    const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), action, algoName, seriesCode);
+    const timestamp = moment().tz('Asia/Kuala_Lumpur').format('YYYY-MM-DD HH:mm:ss');
+    const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), data.action, data.algoName, data.seriesCode);
     if (!confirmedOrderHistory) {
-      const failureMessage = `${timestamp} ->-> ${algoName} ->-> Exit for ${symbol} appears complete (no open positions), but FAILED TO CONFIRM in order history. P/L calculation SKIPPED.`;
+      const failureMessage = `${timestamp} ->-> ${data.algoName} ->-> Exit for ${data.symbol} appears complete (no open positions), but FAILED TO CONFIRM in order history. P/L calculation SKIPPED.`;
       await logAndNotify(failureMessage);
       return true;
     }
-    const profitLoss = calculateProfitLoss(confirmedOrderHistory, status);
-    const successMessage = `${timestamp} ->-> ${algoName} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
+    const profitLoss = calculateProfitLoss(confirmedOrderHistory, status, data?.lotSize);
+    const successMessage = `${timestamp} ->-> ${data?.algoName} ->-> filled exit ->-> ${data?.action} ->-> ${data?.symbol}@${profitLoss.top}`;
     await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
     await logAndNotify(profitLossMessage);
     console.log('Exit action completed successfully');
     return true;
-  } else {
-    const failureMessage = `Could not fill exit order, rejected exit ->-> ${algoName} ->-> ${action} ->-> ${symbol}@${entryPrice}`;
-    await logAndNotify(failureMessage);
-    console.log('Exit action failed, market order failed');
-    return false;
   }
+  const failureMessage = `Could not fill exit order, rejected exit ->-> ${data?.algoName} ->-> ${data?.action} ->-> ${data?.symbol}@${data?.entryPrice}`;
+  await logAndNotify(failureMessage);
+  console.log('Exit action failed, market order failed');
+  return false;
 }
 
 async function executeMarketExitAction(data) {
   sendtoDiscord(`Asking For Exit ->-> ${data?.algoName} ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice, undefined, data?.algoName);
-  if (!openPositions) { console.log('checkifsessioninvalid', openPositions); return 'sessionexpired in nova platform' };
-  if (openPositions.length === 0) { return `no open order in ${process.env.PLATFORM} platform` }
-  if (!(openPositions[0]?.OpenQuantity)) { console.log('nova changed something', openPositions) }; //remove later
+  if (!openPositions) { console.log('checkifsessioninvalid', openPositions); return 'sessionexpired in nova platform'; }
+  if (openPositions.length === 0) { return `no open order in ${process.env.PLATFORM} platform`; }
+  if (!(openPositions[0]?.OpenQuantity)) { console.log('nova changed something', openPositions); } // remove later
   const entryStatus = (openPositions[0]?.OpenQuantity < 0) ? 'sell' : 'buy';
-  const oppositeStatus = data.action !== entryStatus
+  const oppositeStatus = data.action !== entryStatus;
   console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
   if (openPositions.length === 1 && oppositeStatus) {
     await marketOrder(data?.action, require('../config.json'), data?.seriesCode, data?.lotSize);
@@ -93,7 +92,7 @@ async function executeMarketExitAction(data) {
       await delay(3000);
     }
     if (!refreshedOpenPositions) return 'Exit action failed: could not get refreshed open positions';
-    await processExitCompletion(data.action, data.symbol, data.entryPrice, entryStatus, refreshedOpenPositions, data?.algoName,data?.seriesCode);
+    await processExitCompletion(data, entryStatus, refreshedOpenPositions);
   }
 }
 

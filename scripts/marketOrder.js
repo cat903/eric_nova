@@ -15,7 +15,7 @@ const headers = {
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
   'X-Requested-With': 'XMLHttpRequest',
-  'Referer': `https://${process.env.PLATFORM}.phillipmobile.com/desktop/order_placement.html?v5&SeriesCode=F.BMD.FCPO.H25&tabID=1`,
+  Referer: `https://${process.env.PLATFORM}.phillipmobile.com/desktop/order_placement.html?v5&SeriesCode=F.BMD.FCPO.H25&tabID=1`,
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
 
@@ -35,24 +35,24 @@ const requestBody = {
   PlatformCode: 'D',
 };
 
-async function marketOrder(orderType,config,seriesCode,orderQuantity) {
+async function marketOrder(orderType, config, seriesCode, orderQuantity) {
   requestBody.Order.AccountNo = config.token;
   requestBody.Order.SeriesCode = seriesCode;
   requestBody.Order.OrderQuantity = orderQuantity || 1;
-  headers['Cookie'] = config.xSessionIv;
-  const action = orderType==='buy'? 1 : 2;
+  headers.Cookie = config.xSessionIv;
+  const action = orderType === 'buy' ? 1 : 2;
   requestBody.Order.BuySell = action;
-  try{
+  try {
     const response = await fetch(url, {
-    method: 'POST',
-    headers: headers,
-    body: JSON.stringify(requestBody),
-  });
-  const result = (await response.json());
-  return result;
-  }catch(e){
+      method: 'POST',
+      headers,
+      body: JSON.stringify(requestBody),
+    });
+    const result = (await response.json());
+    return result;
+  } catch (e) {
     console.log(e);
   }
-};
+}
 
-module.exports = marketOrder
+module.exports = marketOrder;

@@ -10,15 +10,15 @@ async function fetchWithRetry(url, headers, requestBody) {
     try {
       const response = await fetch(url, {
         method: 'POST',
-        headers: headers,
+        headers,
         body: JSON.stringify(requestBody),
-        signal: AbortSignal.timeout(15000)
+        signal: AbortSignal.timeout(15000),
       });
       const result = (await response.json());
       const openPositions = result.GetOpenPositionListResult.Item1;
       return openPositions;
     } catch (error) {
-      if (error.name === "TimeoutError") {
+      if (error.name === 'TimeoutError') {
         console.log('15000 ms timeout while getting open position');
       }
       retryCount++;
@@ -38,10 +38,9 @@ const headers = {
   'Sec-Fetch-Mode': 'cors',
   'Sec-Fetch-Site': 'same-origin',
   'X-Requested-With': 'XMLHttpRequest',
-  'Referer': `https://${process.env.PLATFORM}.phillipmobile.com/desktop/order_history_trade.html?v5`,
+  Referer: `https://${process.env.PLATFORM}.phillipmobile.com/desktop/order_history_trade.html?v5`,
   'Referrer-Policy': 'strict-origin-when-cross-origin',
 };
-
 
 const requestBody = {
   Language: 'EN',
@@ -49,15 +48,15 @@ const requestBody = {
 };
 
 async function getOpenPositionList(config) {
-  headers['Cookie'] = config.xSessionIv;
+  headers.Cookie = config.xSessionIv;
   requestBody.Token = config.token;
   const response = await fetchWithRetry(url, headers, requestBody);
   return response;
-};
+}
 
 // (async function () {
 //   const openPositions = await getOpenPositionList(require('../config.json'));
 //   console.log(openPositions)
 // })()
 
-module.exports = getOpenPositionList
+module.exports = getOpenPositionList;
