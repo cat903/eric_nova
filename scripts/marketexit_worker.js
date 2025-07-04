@@ -49,7 +49,7 @@ async function checkOpenPositions(action, symbol, entryPrice, retryn = 3, algoNa
   return openPositions;
 }
 
-async function processExitCompletion(action, symbol, entryPrice, status, openPositions, algoName,seriesCode) {
+async function processExitCompletion(action, symbol, entryPrice, status, openPositions, algoName,seriesCode, lotSize) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
     const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), action, algoName, seriesCode);
@@ -58,7 +58,7 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
       await logAndNotify(failureMessage);
       return true;
     }
-    const profitLoss = calculateProfitLoss(confirmedOrderHistory, status);
+    const profitLoss = calculateProfitLoss(confirmedOrderHistory, status, lotSize);
     const successMessage = `${timestamp} ->-> ${algoName} ->-> filled exit ->-> ${action} ->-> ${symbol}@${profitLoss.top}`;
     await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
@@ -93,7 +93,7 @@ async function executeMarketExitAction(data) {
       await delay(3000);
     }
     if (!refreshedOpenPositions) return 'Exit action failed: could not get refreshed open positions';
-    await processExitCompletion(data.action, data.symbol, data.entryPrice, entryStatus, refreshedOpenPositions, data?.algoName,data?.seriesCode);
+    await processExitCompletion(data.action, data.symbol, data.entryPrice, entryStatus, refreshedOpenPositions, data?.algoName,data?.seriesCode, data?.lotSize);
   }
 }
 

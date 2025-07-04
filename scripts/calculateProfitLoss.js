@@ -1,4 +1,4 @@
-const calculateProfitLoss = (orders,marketentryStatus) => {
+const calculateProfitLoss = (orders, marketentryStatus, lotSize) => {
     if (orders.length < 2) {
         console.log("Not enough orders to calculate profit or loss.");
         return { error: "Not enough orders." };
@@ -8,18 +8,19 @@ const calculateProfitLoss = (orders,marketentryStatus) => {
     const secondOrder = orders[1];
     const top = firstOrder.AveragePrice;
     const bottom = secondOrder.AveragePrice;
+    const orderQuantity = parseInt(lotSize) || 0;
     // Ensure first order is SELL and second order is BUY
     if (((firstOrder.OrderStatusDesc === 'Filled') || (secondOrder.OrderStatusDesc === 'Filled')) && (firstOrder.BuySell !== secondOrder.BuySell)) {
         let profitLoss = null;
-        if(marketentryStatus==='sell'){
-           profitLoss = bottom - top;
-        }else{
-           profitLoss = top - bottom;
+        if (marketentryStatus === 'sell') {
+            profitLoss = bottom - top;
+        } else {
+            profitLoss = top - bottom;
         }
         const result = profitLoss >= 0 ? "Profit" : "Loss";
         return {
             result,
-            amount: (Math.abs(profitLoss)*25),
+            amount: (Math.abs(profitLoss) * 25 * orderQuantity),
             top
         };
     }
