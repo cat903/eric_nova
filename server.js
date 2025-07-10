@@ -188,14 +188,17 @@ app.get('/api/open-positions', isAuthenticated, async (req, res) => {
 });
 
 app.get('/api/order-history', isAuthenticated, (req, res) => {
-  const { date } = req.query;
-  let query = 'SELECT * FROM orders ORDER BY createdTime DESC';
+  const { date, limit = 10, offset = 0 } = req.query;
+  let query = 'SELECT * FROM orders';
   const params = [];
 
   if (date) {
     query += ' WHERE DATE(createdTime) = ?';
     params.push(date);
   }
+
+  query += ' ORDER BY createdTime DESC LIMIT ? OFFSET ?';
+  params.push(limit, offset);
 
   db.all(query, params, (err, rows) => {
     if (err) {
@@ -207,14 +210,66 @@ app.get('/api/order-history', isAuthenticated, (req, res) => {
   });
 });
 
+app.get('/api/order-history/count', isAuthenticated, (req, res) => {
+  const { date } = req.query;
+  let query = 'SELECT COUNT(*) as count FROM orders';
+  const params = [];
+
+  if (date) {
+    query += ' WHERE DATE(createdTime) = ?';
+    params.push(date);
+  }
+
+  db.get(query, params, (err, row) => {
+    if (err) {
+      console.error('Error getting order history count:', err);
+      res.status(500).json({ error: 'Failed to get order history count' });
+      return;
+    }
+    res.json({ count: row.count });
+  });
+});
+
 app.get('/api/realized-trades', isAuthenticated, (req, res) => {
-  db.all('SELECT * FROM realized_trades ORDER BY createdAt DESC', [], (err, rows) => {
+  const { date, limit = 10, offset = 0 } = req.query;
+  let query = 'SELECT * FROM realized_trades';
+  const params = [];
+
+  if (date) {
+    query += ' WHERE DATE(createdAt) = ?';
+    params.push(date);
+  }
+
+  query += ' ORDER BY createdAt DESC LIMIT ? OFFSET ?';
+  params.push(limit, offset);
+
+  db.all(query, params, (err, rows) => {
     if (err) {
       console.error('Error getting realized trades:', err);
       res.status(500).json({ error: 'Failed to get realized trades' });
       return;
     }
     res.json(rows);
+  });
+});
+
+app.get('/api/realized-trades/count', isAuthenticated, (req, res) => {
+  const { date } = req.query;
+  let query = 'SELECT COUNT(*) as count FROM realized_trades';
+  const params = [];
+
+  if (date) {
+    query += ' WHERE DATE(createdAt) = ?';
+    params.push(date);
+  }
+
+  db.get(query, params, (err, row) => {
+    if (err) {
+      console.error('Error getting realized trades count:', err);
+      res.status(500).json({ error: 'Failed to get realized trades count' });
+      return;
+    }
+    res.json({ count: row.count });
   });
 });
 
