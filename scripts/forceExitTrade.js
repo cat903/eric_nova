@@ -19,7 +19,7 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
-async function getConfirmedOrderHistoryWithRetry(config, expectedAction, algoName, seriesCode, maxRetries = 6, retryDelayMs = 5000) {
+async function getConfirmedOrderHistoryWithRetry(config, expectedAction, algoName="default", seriesCode, maxRetries = 6, retryDelayMs = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const orderHistory = await getOrderHistory(config);
