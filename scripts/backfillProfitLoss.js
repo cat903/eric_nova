@@ -38,7 +38,7 @@ async function backfillProfitLoss() {
       quantity INTEGER NOT NULL,
       profitLossAmount REAL NOT NULL,
       profitLossResult TEXT NOT NULL,
-      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      createdAt TIMESTAMP,
       UNIQUE(entryOrderId, exitOrderId)
     )
   `);
@@ -80,13 +80,13 @@ async function backfillProfitLoss() {
           const oldestSell = openSells[0];
           const tradeQuantity = Math.min(currentOrder.remainingQuantity, oldestSell.remainingQuantity);
 
-          const profitLossRaw = currentOrder.price - oldestSell.price; // Buy price - Sell price
+          const profitLossRaw = oldestSell.price - currentOrder.price; // Sell price - Buy price
           const profitLossAmount = profitLossRaw * 25 * tradeQuantity; // Assuming 25 is contract multiplier
           const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
 
           await dbRunAsync(
-            `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult) VALUES (?, ?, ?, ?, ?)`,
-            [oldestSell.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult]
+            `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
+            [oldestSell.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult, currentOrder.createdTime]
           );
           console.log(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestSell.orderId} (SELL) and ${currentOrder.orderId} (BUY). P/L: ${profitLossAmount}`);
 
@@ -106,13 +106,13 @@ async function backfillProfitLoss() {
           const oldestBuy = openBuys[0];
           const tradeQuantity = Math.min(currentOrder.remainingQuantity, oldestBuy.remainingQuantity);
 
-          const profitLossRaw = oldestBuy.price - currentOrder.price; // Buy price - Sell price
+          const profitLossRaw = currentOrder.price - oldestBuy.price; // Sell price - Buy price
           const profitLossAmount = profitLossRaw * 25 * tradeQuantity; // Assuming 25 is contract multiplier
           const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
 
           await dbRunAsync(
-            `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult) VALUES (?, ?, ?, ?, ?)`,
-            [oldestBuy.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult]
+            `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
+            [oldestBuy.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult, currentOrder.createdTime]
           );
           console.log(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestBuy.orderId} (BUY) and ${currentOrder.orderId} (SELL). P/L: ${profitLossAmount}`);
 

@@ -23,8 +23,7 @@ module.exports = {
         {
             name: 'backfill_profit_loss',
             script: './scripts/backfillProfitLoss.js',
-            exec_mode: 'fork',
-            instances: 1,
+            cron_restart: '* * * * *',
             autorestart: false,
             watch: false
         }
