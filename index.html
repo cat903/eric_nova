@@ -147,7 +147,17 @@
           const tr = document.createElement('tr');
           headers.forEach(header => {
             const td = document.createElement('td');
-            td.textContent = rowData[header];
+            if (table.id === 'order-history-table' && (header === 'profitLossAmount' || header === 'profitLossResult')) {
+              if (header === 'profitLossAmount') {
+                td.textContent = `RM ${parseFloat(rowData[header]).toFixed(2)}`;
+                td.classList.add(rowData.profitLossResult === 'Profit' ? 'text-success' : 'text-danger');
+              } else if (header === 'profitLossResult') {
+                td.textContent = rowData[header];
+                td.classList.add(rowData.profitLossResult === 'Profit' ? 'text-success' : 'text-danger');
+              }
+            } else {
+              td.textContent = rowData[header];
+            }
             tr.appendChild(td);
           });
           tbody.appendChild(tr);

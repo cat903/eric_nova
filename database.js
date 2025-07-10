@@ -54,7 +54,9 @@ db.serialize(() => {
     selfTradePreventionMode TEXT,
     lastQuoteAssetTransacted REAL,
     createdTime TEXT,
-    tradeId TEXT
+    tradeId TEXT,
+    profitLossAmount REAL,
+    profitLossResult TEXT
   )`);
 });
 

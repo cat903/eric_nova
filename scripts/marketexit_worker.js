@@ -7,6 +7,7 @@ const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
 require('dotenv').config();
 const { CLOSING_TIMES, MARKET_TIMEZONE } = require('./marketConfig.js');
+const db = require('../database.js'); // Import the database connection
 
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
@@ -64,6 +65,23 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
     await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
     await logAndNotify(profitLossMessage);
+
+    // Update the database with profit/loss
+    if (profitLoss) {
+      const orderIdToUpdate = confirmedOrderHistory[0].OrderId; // Assuming the first order in history is the one just closed
+      db.run(
+        'UPDATE orders SET profitLossAmount = ?, profitLossResult = ? WHERE orderId = ?',
+        [profitLoss.amount, profitLoss.result, orderIdToUpdate],
+        function(err) {
+          if (err) {
+            console.error('Error updating profit/loss in database:', err);
+          } else {
+            console.log(`Profit/Loss updated for order ${orderIdToUpdate}`);
+          }
+        }
+      );
+    }
+
     console.log('Exit action completed successfully');
     return true;
   } else {
