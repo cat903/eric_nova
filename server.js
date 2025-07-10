@@ -6,8 +6,7 @@ const getOrderHistory = require('./scripts/getOrderHistory.js');
 const db = require('./database.js');
 const { Worker } = require('worker_threads');
 const fs = require('fs');
-const moment = require('moment-timezone');
-const { MARKET_OPEN_HOUR, MARKET_OPEN_MINUTE, MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE, MARKET_TIMEZONE } = require('./scripts/marketConfig.js');
+
 
 const app = express();
 const port = 3000;
@@ -134,15 +133,8 @@ async function fetchOrderHistory() {
 }
 
 function scheduleOrderHistoryFetch() {
-  const now = moment().tz(MARKET_TIMEZONE);
-  const marketOpen = now.clone().hour(MARKET_OPEN_HOUR).minute(MARKET_OPEN_MINUTE).second(0).millisecond(0);
-  const marketClose = now.clone().hour(MARKET_CLOSE_HOUR).minute(MARKET_CLOSE_MINUTE).second(0).millisecond(0);
-
-  if (now.isBetween(marketOpen, marketClose)) {
-    fetchOrderHistory();
-  }
-
-  setTimeout(scheduleOrderHistoryFetch, 2 * 60 * 1000);
+  fetchOrderHistory();
+  setTimeout(scheduleOrderHistoryFetch, 2 * 60 * 1000); // Check every 2 minutes
 }
 
 app.listen(port, () => {

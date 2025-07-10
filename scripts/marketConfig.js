@@ -10,16 +10,7 @@ const CLOSING_TIMES = [
   { day: 5, times: ["12:30", "18:00"] },          // Friday (No night market)
 ];
 
-const MARKET_OPEN_HOUR = 9;
-const MARKET_OPEN_MINUTE = 30;
-const MARKET_CLOSE_HOUR = 16;
-const MARKET_CLOSE_MINUTE = 0;
-
 module.exports = {
   MARKET_TIMEZONE,
   CLOSING_TIMES,
-  MARKET_OPEN_HOUR,
-  MARKET_OPEN_MINUTE,
-  MARKET_CLOSE_HOUR,
-  MARKET_CLOSE_MINUTE,
 };
