@@ -87,12 +87,86 @@ function isApiKeyAuthenticated(req, res, next) {
   next();
 }
 
+function isAuthenticated(req, res, next) {
+  if (req.session.userId) {
+    next();
+  } else {
+    res.status(401).json({ message: 'Unauthorized' });
+  }
+}
+
+
 app.get('/', (req, res) => {
   if (req.session.userId) {
     res.sendFile(path.join(__dirname, 'index.html'));
   } else {
     res.redirect('/login.html');
   }
+});
+
+app.post('/register', async (req, res) => {
+  if (process.env.ALLOW_REGISTRATION === 'false' || process.env.ALLOW_REGISTRATION === '0') {
+    return res.status(403).json({ message: 'User registration is currently disabled.' });
+  }
+
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required.' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    db.run('INSERT INTO users (username, password) VALUES (?, ?)', [username, hashedPassword], function(err) {
+      if (err) {
+        if (err.message.includes('UNIQUE constraint failed')) {
+          return res.status(409).json({ message: 'User already exists.' });
+        }
+        console.error('Error registering user:', err);
+        return res.status(500).json({ message: 'Error registering user.' });
+      }
+      res.status(201).json({ message: 'User registered successfully.' });
+    });
+  } catch (error) {
+    console.error('Error hashing password:', error);
+    res.status(500).json({ message: 'Error registering user.' });
+  }
+});
+
+app.post('/login', (req, res) => {
+  const { username, password } = req.body;
+
+  if (!username || !password) {
+    return res.status(400).json({ message: 'Username and password are required.' });
+  }
+
+  db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
+    if (err) {
+      console.error('Error fetching user:', err);
+      return res.status(500).json({ message: 'Error logging in.' });
+    }
+    if (!user) {
+      return res.status(400).json({ message: 'Invalid credentials.' });
+    }
+
+    const match = await bcrypt.compare(password, user.password);
+    if (match) {
+      req.session.userId = user.id;
+      res.json({ message: 'Logged in successfully.' });
+    } else {
+      res.status(400).json({ message: 'Invalid credentials.' });
+    }
+  });
+});
+
+app.post('/logout', (req, res) => {
+  req.session.destroy(err => {
+    if (err) {
+      console.error('Error destroying session:', err);
+      return res.status(500).json({ message: 'Error logging out.' });
+    }
+    res.json({ message: 'Logged out successfully.' });
+  });
 });
 
 app.post('/register', async (req, res) => {

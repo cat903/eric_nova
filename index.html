@@ -40,6 +40,23 @@
         <div class="card">
           <div class="card-header">
             <h2 class="card-title mb-0">
+              <i class="bi bi-gear"></i>
+              Settings
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="autoshutoffToggle">
+              <label class="form-check-label" for="autoshutoffToggle">Enable Auto-Shutoff</label>
+            </div>
+            <div id="autoshutoffStatus" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-12 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title mb-0">
               <i class="bi bi-folder-open"></i>
               Open Trades
             </h2>
@@ -327,49 +344,6 @@
         }
       });
 
-      // Autoshutoff Toggle Logic
-      const autoshutoffToggle = document.getElementById('autoshutoffToggle');
-      const autoshutoffStatusDiv = document.getElementById('autoshutoffStatus');
-
-      async function getAutoshutoffStatus() {
-        try {
-          const response = await fetch('/api/autoshutoff/status');
-          const data = await response.json();
-          autoshutoffToggle.checked = data.enabled;
-          autoshutoffStatusDiv.textContent = `Auto-shutoff is currently: ${data.enabled ? 'Enabled' : 'Disabled'}`;
-        } catch (error) {
-          console.error('Error fetching autoshutoff status:', error);
-          autoshutoffStatusDiv.textContent = 'Error fetching status.';
-        }
-      }
-
-      async function toggleAutoshutoff(enable) {
-        try {
-          const response = await fetch('/api/autoshutoff/toggle', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ enable }),
-          });
-          const data = await response.json();
-          if (data.success) {
-            autoshutoffStatusDiv.textContent = `Auto-shutoff is now: ${enable ? 'Enabled' : 'Disabled'}`;
-          } else {
-            autoshutoffStatusDiv.textContent = `Failed to toggle: ${data.message}`;
-          }
-        } catch (error) {
-          console.error('Error toggling autoshutoff:', error);
-          autoshutoffStatusDiv.textContent = 'Error toggling autoshutoff.';
-        }
-      }
-
-      autoshutoffToggle.addEventListener('change', (event) => {
-        toggleAutoshutoff(event.target.checked);
-      });
-
-      getAutoshutoffStatus();
-
       // Refresh data every 30 seconds
       setInterval(() => {
         // Only refresh data for the currently active tab
@@ -382,6 +356,47 @@
         fetchOpenPositions(); // Always refresh open positions
         getAutoshutoffStatus(); // Also refresh autoshutoff status
       }, 30000);
+
+      // Auto-shutoff toggle logic
+      const autoshutoffToggle = document.getElementById('autoshutoffToggle');
+      const autoshutoffStatusDiv = document.getElementById('autoshutoffStatus');
+
+      async function getAutoshutoffStatus() {
+        try {
+          const response = await fetch('/api/autoshutoff/status');
+          const data = await response.json();
+          autoshutoffToggle.checked = data.enabled;
+          autoshutoffStatusDiv.textContent = data.enabled ? 'Auto-shutoff is currently ENABLED.' : 'Auto-shutoff is currently DISABLED.';
+        } catch (error) {
+          console.error('Error fetching auto-shutoff status:', error);
+          autoshutoffStatusDiv.textContent = 'Could not fetch auto-shutoff status.';
+        }
+      }
+
+      autoshutoffToggle.addEventListener('change', async () => {
+        const isEnabled = autoshutoffToggle.checked;
+        try {
+          const response = await fetch('/api/autoshutoff/toggle', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ enabled: isEnabled }),
+          });
+          if (response.ok) {
+            getAutoshutoffStatus(); // Refresh status after update
+          } else {
+            console.error('Failed to update auto-shutoff status.');
+            autoshutoffToggle.checked = !isEnabled; // Revert toggle if update fails
+          }
+        } catch (error) {
+          console.error('Error updating auto-shutoff status:', error);
+          autoshutoffToggle.checked = !isEnabled; // Revert toggle on error
+        }
+      });
+
+      // Initial fetch for auto-shutoff status
+      getAutoshutoffStatus();
     });
   </script>
 </body>
