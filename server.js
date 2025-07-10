@@ -18,10 +18,10 @@ const port = 3000;
 app.use(express.json());
 app.use(cookieParser());
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'supersecretkey', // Use a strong secret from .env
+  secret: process.env.SESSION_SECRET || '5964b653c8c786b1b5aa3eb985758fe019cb8cd8926e8176dbed8558c4faecfb', 
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' } // Set secure to true in production for HTTPS
+  cookie: { secure: process.env.NODE_ENV === 'production' }
 }));
 app.use(express.static(path.join(__dirname)));
 
