@@ -1,5 +1,4 @@
 const db = require('../database.js');
-const calculateProfitLoss = require('./calculateProfitLoss.js');
 
 async function backfillProfitLoss() {
   console.log('Starting backfill of profit/loss...');
@@ -42,23 +41,34 @@ async function backfillProfitLoss() {
           const lotSize = Math.min(entryOrder.quantity, exitOrder.quantity);
 
           if (lotSize > 0) {
-            const profitLoss = calculateProfitLoss([entryOrder, exitOrder], entryOrder.side.toLowerCase(), lotSize);
+            let profitLossRaw = 0;
+            const entryPrice = entryOrder.price; // Use 'price' from DB for backfill
+            const exitPrice = exitOrder.price;   // Use 'price' from DB for backfill
 
-            if (profitLoss && profitLoss.amount !== undefined && profitLoss.result) {
+            if (entryOrder.side === 'SELL') { // Short position: Sold first, then bought to cover
+                profitLossRaw = entryPrice - exitPrice;
+            } else if (entryOrder.side === 'BUY') { // Long position: Bought first, then sold to close
+                profitLossRaw = exitPrice - entryPrice;
+            }
+
+            const profitLossResult = profitLossRaw >= 0 ? "Profit" : "Loss";
+            const profitLossAmount = (Math.abs(profitLossRaw) * 25 * lotSize);
+
+            if (profitLossAmount !== undefined && profitLossResult) {
               db.run(
                 'UPDATE orders SET profitLossAmount = ?, profitLossResult = ? WHERE orderId = ?',
-                [profitLoss.amount, profitLoss.result, entryOrder.orderId],
+                [profitLossAmount, profitLossResult, entryOrder.orderId],
                 function(err) {
                   if (err) console.error('Error updating entry order P/L:', err);
-                  else console.log(`Backfilled P/L for entry order ${entryOrder.orderId}: ${profitLoss.result} ${profitLoss.amount}`);
+                  else console.log(`Backfilled P/L for entry order ${entryOrder.orderId}: ${profitLossResult} ${profitLossAmount}`);
                 }
               );
               db.run(
                 'UPDATE orders SET profitLossAmount = ?, profitLossResult = ? WHERE orderId = ?',
-                [profitLoss.amount, profitLoss.result, exitOrder.orderId],
+                [profitLossAmount, profitLossResult, exitOrder.orderId],
                 function(err) {
                   if (err) console.error('Error updating exit order P/L:', err);
-                  else console.log(`Backfilled P/L for exit order ${exitOrder.orderId}: ${profitLoss.result} ${profitLoss.amount}`);
+                  else console.log(`Backfilled P/L for exit order ${exitOrder.orderId}: ${profitLossResult} ${profitLossAmount}`);
                 }
               );
 
