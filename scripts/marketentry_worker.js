@@ -3,6 +3,7 @@ const getOpenPosition = require('./getOpenPosition.js');
 const marketOrder = require('./marketOrder.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
+const { CLOSING_TIMES, MARKET_TIMEZONE } = require('./marketConfig.js');
 require('dotenv').config();
 
 async function delay(time) {
@@ -66,25 +67,17 @@ async function executeMarketEntryAction(data) {
   }
 }
 
-const closingTimes = [
-  { day: 1, times: ["12:30", "18:00", "23:30"] }, // Monday
-  { day: 2, times: ["12:30", "18:00", "23:30"] }, // Tuesday
-  { day: 3, times: ["12:30", "18:00", "23:30"] }, // Wednesday
-  { day: 4, times: ["12:30", "18:00", "23:30"] }, // Thursday
-  { day: 5, times: ["12:30", "18:00"] },          // Friday (No night market)
-];
-
 function canTrade() {
-  const now = moment().tz("Asia/Kuala_Lumpur");
+  const now = moment().tz(MARKET_TIMEZONE);
   const currentDay = now.isoWeekday();
-  const marketDay = closingTimes.find(day => day.day === currentDay);
+  const marketDay = CLOSING_TIMES.find(day => day.day === currentDay);
 
   if (!marketDay) {
     return false;
   }
 
   for (const closingTime of marketDay.times) {
-    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
+    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, MARKET_TIMEZONE);
     const diffMinutes = closingMoment.diff(now, 'minutes');
     if (diffMinutes >= 0 && diffMinutes <= 6) {
       return false;

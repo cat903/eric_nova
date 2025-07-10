@@ -19,20 +19,6 @@ module.exports = {
             cron_restart: '*/2 * * * *',
             autorestart: false,
             watch: false
-        },
-        {
-            name: 'archiveOrders_daily',
-            script: './scripts/archiveOrders.js',
-            cron_restart: '30 23 * * 1-5',
-            autorestart: false,
-            watch: false
-        },
-        {
-            name: 'archiveOrders_friday',
-            script: './scripts/archiveOrders.js',
-            cron_restart: '0 18 * * 5',
-            autorestart: false,
-            watch: false
         }
     ]
 };

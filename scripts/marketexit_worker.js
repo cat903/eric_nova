@@ -6,6 +6,7 @@ const calculateProfitLoss = require('./calculateProfitLoss.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
 require('dotenv').config();
+const { CLOSING_TIMES, MARKET_TIMEZONE } = require('./marketConfig.js');
 
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));

@@ -24,6 +24,7 @@ async function fetchWithRetry(url, headers, requestBody) {
       retryCount++;
     }
   }
+  return null; // Return null if all retries fail
 }
 
 const headers = {

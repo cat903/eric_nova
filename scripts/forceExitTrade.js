@@ -7,6 +7,7 @@ const marketOrder = require('./marketOrder.js');
 const getOrderHistory = require('./getOrderHistory.js');
 const calculateProfitLoss = require('./calculateProfitLoss.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
+const { CLOSING_TIMES, MARKET_TIMEZONE } = require('./marketConfig.js');
 
 
 async function delay(time) {
@@ -96,17 +97,10 @@ async function executeForceMarketExitAction(openPositions) {
 
 
 
-// Market closing times
-const closingTimes = [
-  { day: 1, times: ["12:30", "18:00", "23:30"] }, // Monday
-  { day: 2, times: ["12:30", "18:00", "23:30"] }, // Tuesday
-  { day: 3, times: ["12:30", "18:00", "23:30"] }, // Wednesday
-  { day: 4, times: ["12:30", "18:00", "23:30"] }, // Thursday
-  { day: 5, times: ["12:30", "18:00"] },          // Friday (No night market)
-];
+const closingTimes = CLOSING_TIMES;
 
 async function checkMarketClosing() {
-  const now = moment().tz("Asia/Kuala_Lumpur");
+  const now = moment().tz(MARKET_TIMEZONE);
   const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
 
 
@@ -120,7 +114,7 @@ async function checkMarketClosing() {
   const openPositions = await checkOpenPositions();
 
   marketDay.times.forEach(closingTime => {
-    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
+    const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, MARKET_TIMEZONE);
     const diffMinutes = closingMoment.diff(now, 'minutes');
 
     if (diffMinutes >= 0 && diffMinutes <= 5) {

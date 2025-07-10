@@ -1,6 +1,8 @@
 const express = require('express');
 const path = require('path');
+require('dotenv').config();
 const getOpenPosition = require('./scripts/getOpenPosition.js');
+const getOrderHistory = require('./scripts/getOrderHistory.js');
 const db = require('./database.js');
 const { Worker } = require('worker_threads');
 const fs = require('fs');
@@ -11,23 +13,37 @@ const port = 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
+const activeWorkers = new Set();
+
 function spawnWorker(scriptPath, data) {
+    const workerKey = `${data.algoName || 'default'}-${data.type}`;
+
+    if (activeWorkers.has(workerKey)) {
+        console.log(`Worker for ${workerKey} is already active. Skipping.`);
+        return Promise.resolve('Worker already active');
+    }
+
+    activeWorkers.add(workerKey);
+
     return new Promise((resolve, reject) => {
         const worker = new Worker(scriptPath, { workerData: data });
 
         worker.on('message', (message) => {
             console.log(`Worker finished with message: ${message}`);
+            activeWorkers.delete(workerKey);
             resolve(message);
         });
 
         worker.on('error', (error) => {
             console.error(`Worker error: ${error}`);
+            activeWorkers.delete(workerKey);
             reject(error);
         });
 
         worker.on('exit', (code) => {
             if (code !== 0) {
                 console.error(`Worker exited with code ${code}`);
+                activeWorkers.delete(workerKey);
                 reject(new Error(`Worker exited with code ${code}`));
             }
         });
@@ -84,6 +100,52 @@ app.get('/api/order-history', (req, res) => {
   });
 });
 
+const getOrderHistory = require('./scripts/getOrderHistory.js');
+
+async function fetchOrderHistory() {
+  try {
+    const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+    const orders = await getOrderHistory(config);
+
+    if (orders && Array.isArray(orders) && orders.length > 0) {
+      const stmt = db.prepare(`
+        INSERT OR IGNORE INTO orders (
+          orderId, symbol, side, orderType, quantity, price, status, createdTime, tradeId
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `);
+      orders.forEach(order => {
+        stmt.run(
+          order.OrderId,
+          order.SeriesTradeCode,
+          order.BuySell === 1 ? 'BUY' : 'SELL',
+          order.OrderTypeDesc,
+          order.FilledQuantity,
+          order.AveragePrice,
+          order.OrderStatusDesc,
+          order.OrderSubmissionDt,
+          order.TradeId
+        );
+      });
+      stmt.finalize();
+    }
+  } catch (error) {
+    console.error('Error fetching and saving order history:', error);
+  }
+}
+
+function scheduleOrderHistoryFetch() {
+  const now = new Date();
+  const marketOpen = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 30, 0);
+  const marketClose = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0, 0);
+
+  if (now >= marketOpen && now <= marketClose) {
+    fetchOrderHistory();
+  }
+
+  setTimeout(scheduleOrderHistoryFetch, 2 * 60 * 1000); // Check every 2 minutes
+}
+
 app.listen(port, () => {
   console.log(`Server listening at http://localhost:${port}`);
+  scheduleOrderHistoryFetch();
 });
