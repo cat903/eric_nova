@@ -19,6 +19,14 @@ module.exports = {
             cron_restart: '*/2 * * * *',
             autorestart: false,
             watch: false
+        },
+        {
+            name: 'backfill_profit_loss',
+            script: './scripts/backfillProfitLoss.js',
+            exec_mode: 'fork',
+            instances: 1,
+            autorestart: false,
+            watch: false
         }
     ]
 };
