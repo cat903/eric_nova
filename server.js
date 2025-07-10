@@ -74,12 +74,16 @@ function isAuthenticated(req, res, next) {
   }
 }
 
-// Middleware to check for API key authentication
+// Middleware to check for API key authentication in the request body
 function isApiKeyAuthenticated(req, res, next) {
-  const apiKey = req.headers['x-api-key']; // Assuming API key is sent in a custom header
+  const apiKey = req.body.api_key; // Get API key from request body
+
   if (!apiKey || apiKey !== process.env.WEBHOOK_API_KEY) {
     return res.status(401).json({ message: 'Unauthorized: Invalid API Key' });
   }
+
+  // Remove the API key from the body before proceeding
+  delete req.body.api_key;
   next();
 }
 

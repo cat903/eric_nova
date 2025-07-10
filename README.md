@@ -27,6 +27,7 @@ PLATFORM=`Platform`  (onenovaweb || demo)
   "action": "{{strategy.order.action}}",
   "entryPrice": "{{strategy.order.price}}",
   "type": "{{strategy.position_size}}",
-  "lotSize": 1
+  "lotSize": 1,
+  "X-API-Key":"dad140d05dde0eb784dab0d06965197efc8354ae47de6a8f900986d043ca7ba7"
 }
 ```
