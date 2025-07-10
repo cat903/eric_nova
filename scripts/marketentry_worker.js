@@ -5,13 +5,14 @@ const sendtoDiscord = require('./sendtoDiscord.js');
 const moment = require('moment-timezone');
 const { CLOSING_TIMES, MARKET_TIMEZONE } = require('./marketConfig.js');
 require('dotenv').config();
+const logger = require('../logger');
 
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
 async function logAndNotify(message) {
-  console.log(message);
+  logger.info(message);
   await sendtoDiscord(message);
 }
 
@@ -31,7 +32,7 @@ async function processEntryCompletion(action, symbol, entryPrice, openPositions,
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
     const successMessage = `${timestamp} ->-> ${algoName} ->-> filled entry ->-> ${action} ->-> ${symbol}@${openPositions[0].AveragePrice}`;
     await logAndNotify(successMessage);
-    console.log('Entry filled successfully!');
+    logger.debug('Entry filled successfully!');
     return true;
   }
   return false;

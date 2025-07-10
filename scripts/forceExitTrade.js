@@ -8,6 +8,7 @@ const getOrderHistory = require('./getOrderHistory.js');
 const calculateProfitLoss = require('./calculateProfitLoss.js');
 const sendtoDiscord = require('./sendtoDiscord.js');
 const { CLOSING_TIMES, MARKET_TIMEZONE } = require('./marketConfig.js');
+const logger = require('../logger');
 
 
 async function delay(time) {
@@ -15,7 +16,7 @@ async function delay(time) {
 }
 
 async function logAndNotify(message) {
-  console.log(message);
+  logger.info(message);
   await sendtoDiscord(message);
 }
 
@@ -67,24 +68,24 @@ async function processExitCompletion(action, symbol, status, openPositions,serie
     await logAndNotify(successMessage);
     const profitLossMessage = `${profitLoss?.result} -> RM ${profitLoss?.amount}`;
     await logAndNotify(profitLossMessage);
-    console.log('Exit action completed successfully');
+    logger.debug('Exit action completed successfully');
     return true;
   } else {
     const failureMessage = `Could not fill force exit order, rejected exit ->-> ${action} ->-> ${symbol}`;
     await logAndNotify(failureMessage);
-    console.log('Force Exit action failed, market order failed');
+    logger.debug('Force Exit action failed, market order failed');
     return false;
   }
 }
 
 async function executeForceMarketExitAction(openPositions) {
-    if (!openPositions) {console.log('forceexit:checkifsessioninvalid',openPositions);console.log('forceexit:sessionexpired in nova platform')} ;
-  if (openPositions.length===0) {console.log(`forceexit:no open order in ${process.env.PLATFORM} platform`)}
-  if (!(openPositions[0]?.OpenQuantity)){console.log('forceexit:nova changed something',openPositions)}; //remove later
+    if (!openPositions) {logger.debug('forceexit:checkifsessioninvalid',openPositions);logger.debug('forceexit:sessionexpired in nova platform')} ;
+  if (openPositions.length===0) {logger.debug(`forceexit:no open order in ${process.env.PLATFORM} platform`)}
+  if (!(openPositions[0]?.OpenQuantity)){logger.debug('forceexit:nova changed something',openPositions)}; //remove later
   const tradeInfo = openPositions[0]
   const action = (tradeInfo?.OpenQuantity < 0) ? 'buy' : 'sell';
   const status = (tradeInfo?.OpenQuantity < 0) ? 'sell' : 'buy';
-  console.log(`openStatus:${status},forceExitStatus:${action},positionOpen:${openPositions.length === 1}, proccedingForceExit:${((openPositions.length === 1) && (action!==status))}`);
+  logger.debug(`openStatus:${status},forceExitStatus:${action},positionOpen:${openPositions.length === 1}, proccedingForceExit:${((openPositions.length === 1) && (action!==status))}`);
   if (openPositions.length === 1) {
     await marketOrder(action, require('../config.json'), tradeInfo.SeriesCode);
     await logAndNotify(`Asking For Force Exit ->-> ${action} ->-> ${tradeInfo.SeriesTradeCode}`);
@@ -106,7 +107,7 @@ async function checkMarketClosing() {
   const marketDay = CLOSING_TIMES.find(day => day.day === currentDay);
   if (!marketDay) return;
   if (!fs.existsSync(CONTROL_FILE)) {
-    console.log('Auto-shutoff DISABLED - skipping market closing check');
+    logger.info('Auto-shutoff DISABLED - skipping market closing check');
     return;
   }
 
@@ -128,11 +129,11 @@ async function checkMarketClosing() {
 
     if (openPositions) { 
       relevantClosingTimes.forEach(closingTime => {
-        console.log(`Market closing soon (${closingTime}), calling close()...`);
+        logger.debug(`Market closing soon (${closingTime}), calling close()...`);
         executeForceMarketExitAction(openPositions);
       });
     } else {
-      console.log('Could not fetch open positions, skipping force exit action.');
+      logger.info('Could not fetch open positions, skipping force exit action.');
     }
   }
 }

@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 require('dotenv').config();
+const logger = require('../logger');
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/PlaceFuturesOrder`;
 
@@ -51,7 +52,7 @@ async function marketOrder(orderType,config,seriesCode,orderQuantity) {
   const result = (await response.json());
   return result;
   }catch(e){
-    console.log(e);
+    logger.error(e);
   }
 };
 

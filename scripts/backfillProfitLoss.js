@@ -1,4 +1,5 @@
 const db = require('../database.js');
+const logger = require('../logger');
 
 // Helper to "promisify" db.all, making it compatible with async/await
 const dbAllAsync = (sql, params) => {
@@ -26,7 +27,7 @@ const dbRunAsync = (sql, params) => {
  * It handles partial fills and both long and short positions using FIFO matching.
  */
 async function backfillProfitLoss() {
-  console.log('Starting backfill of profit/loss...');
+  logger.info('Starting backfill of profit/loss...');
 
   // Create the logging table if it doesn't already exist.
   // This makes the script safe and reliable.
@@ -52,7 +53,7 @@ async function backfillProfitLoss() {
   );
   
   if (allFilledOrders.length < 2) {
-    console.log('Not enough filled orders to form any trade pairs.');
+    logger.info('Not enough filled orders to form any trade pairs.');
     return;
   }
 
@@ -88,7 +89,7 @@ async function backfillProfitLoss() {
             `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
             [oldestSell.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult, currentOrder.createdTime]
           );
-          console.log(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestSell.orderId} (SELL) and ${currentOrder.orderId} (BUY). P/L: ${profitLossAmount}`);
+          logger.debug(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestSell.orderId} (SELL) and ${currentOrder.orderId} (BUY). P/L: ${profitLossAmount}`);
 
           currentOrder.remainingQuantity -= tradeQuantity;
           oldestSell.remainingQuantity -= tradeQuantity;
@@ -114,7 +115,7 @@ async function backfillProfitLoss() {
             `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult, createdAt) VALUES (?, ?, ?, ?, ?, ?)`,
             [oldestBuy.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult, currentOrder.createdTime]
           );
-          console.log(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestBuy.orderId} (BUY) and ${currentOrder.orderId} (SELL). P/L: ${profitLossAmount}`);
+          logger.debug(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestBuy.orderId} (BUY) and ${currentOrder.orderId} (SELL). P/L: ${profitLossAmount}`);
 
           currentOrder.remainingQuantity -= tradeQuantity;
           oldestBuy.remainingQuantity -= tradeQuantity;
@@ -130,10 +131,10 @@ async function backfillProfitLoss() {
     }
   }
 
-  console.log('Profit/loss backfill complete.');
+  logger.info('Profit/loss backfill complete.');
 }
 
 // Run the function and catch any potential errors.
 backfillProfitLoss().catch(err => {
-  console.error("An error occurred during the backfill process:", err);
+  logger.error("An error occurred during the backfill process:", err);
 });

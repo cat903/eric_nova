@@ -1,6 +1,7 @@
 const calculateProfitLoss = (orders, marketentryStatus, lotSize) => {
+    const logger = require('../logger');
     if (orders.length < 2) {
-        console.log("Not enough orders to calculate profit or loss.");
+        logger.debug("Not enough orders to calculate profit or loss.");
         return { error: "Not enough orders." };
     }
 
@@ -8,7 +9,7 @@ const calculateProfitLoss = (orders, marketentryStatus, lotSize) => {
     const secondOrder = orders[1];
 
     if (firstOrder.SeriesCode !== secondOrder.SeriesCode) {
-        console.log("Orders are not for the same instrument.");
+        logger.debug("Orders are not for the same instrument.");
         return { error: "Orders are not for the same instrument." };
     }
 

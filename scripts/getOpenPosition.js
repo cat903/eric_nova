@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 require('dotenv').config();
+const logger = require('../logger');
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOpenPositionList`;
 
@@ -19,7 +20,7 @@ async function fetchWithRetry(url, headers, requestBody) {
       return openPositions;
     } catch (error) {
       if (error.name === "TimeoutError") {
-        console.log('15000 ms timeout while getting open position');
+        logger.warn('15000 ms timeout while getting open position');
       }
       retryCount++;
     }

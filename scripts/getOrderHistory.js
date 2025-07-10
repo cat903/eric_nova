@@ -1,5 +1,6 @@
 const fetch = require('node-fetch');
 require('dotenv').config();
+const logger = require('../logger');
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOrderHistory`;
 
@@ -19,7 +20,7 @@ async function fetchWithRetry(url, headers, requestBody) {
       return orderHistory;
     } catch (error) {
       if (error.name === "TimeoutError") {
-        console.log('15000 ms timeout while getting order history');
+        logger.warn('15000 ms timeout while getting order history');
       }
       retryCount++;
     }

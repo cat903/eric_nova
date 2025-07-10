@@ -4,6 +4,7 @@ const http2 = require('http2');
 const zlib = require('zlib');
 const url = require('url');
 const crypto = require('crypto');
+const logger = require('../logger');
 
 class E2EECrypto {
     constructor(publicKeyStr, sessionIdStr, randomNumberStr) {
@@ -113,7 +114,7 @@ function makeHttp2Request(urlString, method = 'POST', payload = null, customHead
 
         const clientSession = http2.connect(authority, {});
         clientSession.on('error', (err) => reject(new Error(`HTTP/2 session error for ${authority}: ${err.message}`)));
-        clientSession.on('goaway', (errorCode, lastStreamID) => console.warn(`HTTP/2 GOAWAY received for ${authority}: code ${errorCode}, lastStreamID ${lastStreamID}`));
+        clientSession.on('goaway', (errorCode, lastStreamID) => logger.warn(`HTTP/2 GOAWAY received for ${authority}: code ${errorCode}, lastStreamID ${lastStreamID}`));
         clientSession.on('timeout', () => { clientSession.close(); reject(new Error(`HTTP/2 session timeout for ${authority}`)); });
         clientSession.setTimeout(30000);
 
@@ -169,7 +170,7 @@ function makeHttp2Request(urlString, method = 'POST', payload = null, customHead
                 try {
                     resolve({ data: JSON.parse(responseBody), headers: responseHeaders, statusCode: responseHeaders[':status'] });
                 } catch (e) {
-                    console.warn(`HTTP/2 response from ${urlString} not JSON. Status: ${responseHeaders[':status']}. Body: ${responseBody.substring(0, 200)}...`);
+                    logger.warn(`HTTP/2 response from ${urlString} not JSON. Status: ${responseHeaders[':status']}. Body: ${responseBody.substring(0, 200)}...`);
                     resolve({ data: responseBody, headers: responseHeaders, statusCode: responseHeaders[':status'] });
                 }
             });
@@ -187,7 +188,7 @@ function makeHttp2Request(urlString, method = 'POST', payload = null, customHead
 async function callGeneratePresession(presessionUrl, headers) {
     const response = await makeHttp2Request(presessionUrl, 'POST', {}, headers);
     if (response.statusCode === 200 && response.data && response.data.GeneratePresessionResult) {
-        console.log("GeneratePresession successful.");
+        logger.info("GeneratePresession successful.");
         return response.data.GeneratePresessionResult;
     } else {
         throw new Error(`GeneratePresession failed. Status: ${response.statusCode}, Response: ${JSON.stringify(response.data)}`);
@@ -217,7 +218,7 @@ async function callLogin(loginUrl, loginPayload, headers) {
     if (response.statusCode === 200 && response.data && response.data.LoginResult) {
         return { success: true, result: response.data.LoginResult, headers: response.headers };
     } else {
-        console.error("Login failed or unexpected response structure.");
+        logger.error("Login failed or unexpected response structure.");
         return { success: false, result: response.data, statusCode: response.statusCode, headers: response.headers };
     }
 }
@@ -268,17 +269,17 @@ async function runFullLoginProcess(username, password, platform) {
             if (loginAttemptResult.headers && loginAttemptResult.headers.session_t) {
                 const xSessionIv = loginAttemptResult.headers['set-cookie'][0]
                 const token = loginAttemptResult.headers.session_t
-                console.log("Received X-Session-Iv:", xSessionIv)
-                console.log("Received session_t token:", token);
+                logger.debug("Received X-Session-Iv:", xSessionIv)
+                logger.debug("Received session_t token:", token);
                 return { xSessionIv, token }
             }
         } else {
             console.error("Login call failed or returned unexpected data.");
-            console.error("Status Code:", loginAttemptResult.statusCode);
+            logger.error("Status Code:", loginAttemptResult.statusCode);
         }
     } catch (error) {
-        console.error("Message:", error.message);
-        if (error.stack) console.error("Stack:", error.stack);
+        logger.error("Message:", error.message);
+        if (error.stack) logger.error("Stack:", error.stack);
     }
 }
 

@@ -8,13 +8,14 @@ const moment = require('moment-timezone');
 require('dotenv').config();
 const { CLOSING_TIMES, MARKET_TIMEZONE } = require('./marketConfig.js');
 const db = require('../database.js'); // Import the database connection
+const logger = require('../logger');
 
 async function delay(time) {
   return new Promise((resolve) => setTimeout(resolve, time));
 }
 
 async function logAndNotify(message) {
-  console.log(message);
+  logger.info(message);
   await sendtoDiscord(message);
 }
 
@@ -74,20 +75,20 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
         [profitLoss.amount, profitLoss.result, orderIdToUpdate],
         function(err) {
           if (err) {
-            console.error('Error updating profit/loss in database:', err);
+            logger.error('Error updating profit/loss in database:', err);
           } else {
-            console.log(`Profit/Loss updated for order ${orderIdToUpdate}`);
+            logger.debug(`Profit/Loss updated for order ${orderIdToUpdate}`);
           }
         }
       );
     }
 
-    console.log('Exit action completed successfully');
+    logger.debug('Exit action completed successfully');
     return true;
   } else {
     const failureMessage = `Could not fill exit order, rejected exit ->-> ${algoName} ->-> ${action} ->-> ${symbol}@${entryPrice}`;
     await logAndNotify(failureMessage);
-    console.log('Exit action failed, market order failed');
+    logger.debug('Exit action failed, market order failed');
     return false;
   }
 }
@@ -95,12 +96,12 @@ async function processExitCompletion(action, symbol, entryPrice, status, openPos
 async function executeMarketExitAction(data) {
   sendtoDiscord(`Asking For Exit ->-> ${data?.algoName} ->-> ${data.action} ->-> ${data.symbol}@${data.entryPrice} --> LotSize ${data.lotSize}`);
   const openPositions = await checkOpenPositions(data.action, data.symbol, data.entryPrice, undefined, data?.algoName);
-  if (!openPositions) { console.log('checkifsessioninvalid', openPositions); return 'sessionexpired in nova platform' };
+  if (!openPositions) { logger.debug('checkifsessioninvalid', openPositions); return 'sessionexpired in nova platform' };
   if (openPositions.length === 0) { return `no open order in ${process.env.PLATFORM} platform` }
-  if (!(openPositions[0]?.OpenQuantity)) { console.log('nova changed something', openPositions) }; //remove later
+  if (!(openPositions[0]?.OpenQuantity)) { logger.debug('nova changed something', openPositions) }; //remove later
   const entryStatus = (openPositions[0]?.OpenQuantity < 0) ? 'sell' : 'buy';
   const oppositeStatus = data.action !== entryStatus
-  console.log(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
+  logger.debug(`entryStatus:${entryStatus},exitStatus:${data.action},isitOpposite:${oppositeStatus}, positionOpen:${openPositions.length === 1}, procceding exit:${((openPositions.length === 1) && (oppositeStatus))}`);
   if (openPositions.length === 1 && oppositeStatus) {
     await marketOrder(data?.action, require('../config.json'), data?.seriesCode, data?.lotSize);
     let refreshedOpenPositions = null;

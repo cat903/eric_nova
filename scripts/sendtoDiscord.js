@@ -1,5 +1,6 @@
 require('dotenv').config();
 const fetch = require('node-fetch');
+const logger = require('../logger');
 
 const sendToDiscord = async (message) => {
   const webhookURL = process.env.DISCORDWEBHOOK
@@ -11,12 +12,12 @@ const sendToDiscord = async (message) => {
     });
 
     if (response.ok) {
-      console.log("Message sent to Discord webhook successfully.");
+      logger.debug("Message sent to Discord webhook successfully.");
     } else {
-      console.error("Failed to send message. Status:", response.status);
+      logger.error("Failed to send message. Status:", response.status);
     }
   } catch (error) {
-    console.error("Error sending message to Discord:", error.message);
+    logger.error("Error sending message to Discord:", error.message);
   }
 };
 

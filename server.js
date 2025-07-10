@@ -1,5 +1,6 @@
 const express = require('express');
 const path = require('path');
+const logger = require('./logger');
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const session = require('express-session');
@@ -35,7 +36,7 @@ function spawnWorker(scriptPath, data) {
     const workerKey = `${data.algoName || 'default'}-${data.type}`;
 
     if (activeWorkers.has(workerKey)) {
-        console.log(`Worker for ${workerKey} is already active. Skipping.`);
+        logger.debug(`Worker for ${workerKey} is already active. Skipping.`);
         return Promise.resolve('Worker already active');
     }
 
@@ -45,20 +46,20 @@ function spawnWorker(scriptPath, data) {
         const worker = new Worker(scriptPath, { workerData: data });
 
         worker.on('message', (message) => {
-            console.log(`Worker finished with message: ${message}`);
+            logger.debug(`Worker finished with message: ${message}`);
             activeWorkers.delete(workerKey);
             resolve(message);
         });
 
         worker.on('error', (error) => {
-            console.error(`Worker error: ${error}`);
+            logger.error(`Worker error: ${error}`);
             activeWorkers.delete(workerKey);
             reject(error);
         });
 
         worker.on('exit', (code) => {
             if (code !== 0) {
-                console.error(`Worker exited with code ${code}`);
+                logger.error(`Worker exited with code ${code}`);
                 activeWorkers.delete(workerKey);
                 reject(new Error(`Worker exited with code ${code}`));
             }
@@ -122,13 +123,13 @@ app.post('/register', async (req, res) => {
         if (err.message.includes('UNIQUE constraint failed')) {
           return res.status(409).json({ message: 'User already exists.' });
         }
-        console.error('Error registering user:', err);
+        logger.error('Error registering user:', err);
         return res.status(500).json({ message: 'Error registering user.' });
       }
       res.status(201).json({ message: 'User registered successfully.' });
     });
   } catch (error) {
-    console.error('Error hashing password:', error);
+    logger.error('Error hashing password:', error);
     res.status(500).json({ message: 'Error registering user.' });
   }
 });
@@ -142,7 +143,7 @@ app.post('/login', (req, res) => {
 
   db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
     if (err) {
-      console.error('Error fetching user:', err);
+      logger.error('Error fetching user:', err);
       return res.status(500).json({ message: 'Error logging in.' });
     }
     if (!user) {
@@ -162,7 +163,7 @@ app.post('/login', (req, res) => {
 app.post('/logout', (req, res) => {
   req.session.destroy(err => {
     if (err) {
-      console.error('Error destroying session:', err);
+      logger.error('Error destroying session:', err);
       return res.status(500).json({ message: 'Error logging out.' });
     }
     res.json({ message: 'Logged out successfully.' });
@@ -187,13 +188,13 @@ app.post('/register', async (req, res) => {
         if (err.message.includes('UNIQUE constraint failed')) {
           return res.status(409).json({ message: 'User already exists.' });
         }
-        console.error('Error registering user:', err);
+        logger.error('Error registering user:', err);
         return res.status(500).json({ message: 'Error registering user.' });
       }
       res.status(201).json({ message: 'User registered successfully.' });
     });
   } catch (error) {
-    console.error('Error hashing password:', error);
+    logger.error('Error hashing password:', error);
     res.status(500).json({ message: 'Error registering user.' });
   }
 });
@@ -207,7 +208,7 @@ app.post('/login', (req, res) => {
 
   db.get('SELECT * FROM users WHERE username = ?', [username], async (err, user) => {
     if (err) {
-      console.error('Error fetching user:', err);
+      logger.error('Error fetching user:', err);
       return res.status(500).json({ message: 'Error logging in.' });
     }
     if (!user) {
@@ -217,7 +218,7 @@ app.post('/login', (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (match) {
       req.session.userId = user.id;
-      console.log('User logged in. Session ID:', req.session.id, 'User ID:', req.session.userId);
+      logger.info('User logged in. Session ID:', req.session.id, 'User ID:', req.session.userId);
       res.json({ message: 'Logged in successfully.' });
     } else {
       res.status(400).json({ message: 'Invalid credentials.' });
@@ -228,7 +229,7 @@ app.post('/login', (req, res) => {
 app.post('/logout', (req, res) => {
   req.session.destroy(err => {
     if (err) {
-      console.error('Error destroying session:', err);
+      logger.error('Error destroying session:', err);
       return res.status(500).json({ message: 'Error logging out.' });
     }
     res.json({ message: 'Logged out successfully.' });
@@ -237,13 +238,13 @@ app.post('/logout', (req, res) => {
 
 app.post('/signal', isApiKeyAuthenticated, async (req, res) => {
     const webhookData = req.body;
-    console.log('Received webhook:', webhookData);
+    logger.debug('Received webhook:', webhookData);
     if (webhookData.type === '-1' || webhookData.type === '1') {
-        console.log('Spawning worker for entry action...');
+        logger.debug('Spawning worker for entry action...');
         await spawnWorker('./scripts/marketentry_worker.js', webhookData);
     }
     if (webhookData.type === '0') {
-        console.log('Spawning worker for exit action...');
+        logger.debug('Spawning worker for exit action...');
         await spawnWorker('./scripts/marketexit_worker.js', webhookData);
     }
 
@@ -256,7 +257,7 @@ app.get('/api/open-positions', isAuthenticated, async (req, res) => {
     const openPositions = await getOpenPosition(config);
     res.json(openPositions);
   } catch (error) {
-    console.error('Error getting open positions:', error);
+    logger.error('Error getting open positions:', error);
     res.status(500).json({ error: 'Failed to get open positions' });
   }
 });
@@ -276,7 +277,7 @@ app.get('/api/order-history', isAuthenticated, (req, res) => {
 
   db.all(query, params, (err, rows) => {
     if (err) {
-      console.error('Error getting order history:', err);
+      logger.error('Error getting order history:', err);
       res.status(500).json({ error: 'Failed to get order history' });
       return;
     }
@@ -296,7 +297,7 @@ app.get('/api/order-history/count', isAuthenticated, (req, res) => {
 
   db.get(query, params, (err, row) => {
     if (err) {
-      console.error('Error getting order history count:', err);
+      logger.error('Error getting order history count:', err);
       res.status(500).json({ error: 'Failed to get order history count' });
       return;
     }
@@ -319,7 +320,7 @@ app.get('/api/realized-trades', isAuthenticated, (req, res) => {
 
   db.all(query, params, (err, rows) => {
     if (err) {
-      console.error('Error getting realized trades:', err);
+      logger.error('Error getting realized trades:', err);
       res.status(500).json({ error: 'Failed to get realized trades' });
       return;
     }
@@ -339,7 +340,7 @@ app.get('/api/realized-trades/count', isAuthenticated, (req, res) => {
 
   db.get(query, params, (err, row) => {
     if (err) {
-      console.error('Error getting realized trades count:', err);
+      logger.error('Error getting realized trades count:', err);
       res.status(500).json({ error: 'Failed to get realized trades count' });
       return;
     }
@@ -374,7 +375,7 @@ async function fetchOrderHistory() {
       stmt.finalize();
     }
   } catch (error) {
-    console.error('Error fetching and saving order history:', error);
+    logger.error('Error fetching and saving order history:', error);
   }
 }
 
@@ -396,36 +397,36 @@ app.post('/api/autoshutoff/toggle', isAuthenticated, (req, res) => {
   try {
     if (enabled) {
       fs.writeFileSync(controlFilePath, 'enabled');
-      console.log('Autoshutoff enabled.');
+      logger.info('Autoshutoff enabled.');
     } else {
       if (fs.existsSync(controlFilePath)) {
         fs.unlinkSync(controlFilePath);
-        console.log('Autoshutoff disabled.');
+        logger.info('Autoshutoff disabled.');
       } else {
-        console.log('Autoshutoff control file not found, already disabled or never enabled.');
+        logger.info('Autoshutoff control file not found, already disabled or never enabled.');
       }
     }
 
     // Restart PM2 process for force_exit to apply changes
     exec('pm2 restart force_exit', (error, stdout, stderr) => {
       if (error) {
-        console.error(`Error restarting PM2 process: ${error.message}`);
+        logger.error(`Error restarting PM2 process: ${error.message}`);
         return res.status(500).json({ success: false, message: 'Failed to restart PM2 process.', error: error.message });
       }
       if (stderr) {
-        console.warn(`PM2 restart stderr: ${stderr}`);
+        logger.warn(`PM2 restart stderr: ${stderr}`);
       }
-      console.log(`PM2 restart stdout: ${stdout}`);
+      logger.debug(`PM2 restart stdout: ${stdout}`);
       res.json({ success: true, message: `Autoshutoff ${enabled ? 'enabled' : 'disabled'} and PM2 process restarted.` });
     });
 
   } catch (error) {
-    console.error('Error toggling autoshutoff:', error);
+    logger.error('Error toggling autoshutoff:', error);
     res.status(500).json({ success: false, message: 'Failed to toggle autoshutoff.', error: error.message });
   }
 });
 
 app.listen(port, () => {
-  console.log(`Server listening at http://localhost:${port}`);
+  logger.info(`Server listening at http://localhost:${port}`);
   scheduleOrderHistoryFetch();
 });

@@ -2,6 +2,7 @@ require('dotenv').config();
 const fetch = require('node-fetch');
 const authorizeSession = require('./authorizeSession.js');
 const { exec } = require('child_process');
+const logger = require('../logger');
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOpenPositionList`;
 
@@ -46,23 +47,23 @@ async function getOpenPositionList(config) {
     const openPositions = await getOpenPositionList(require('../config.json'));
     if(openPositions.title === 'Unauthorized'){
       const result = await authorizeSession(process.env.USERE,process.env.USERP,process.env.PLATFORM)
-      console.log(result);
+      logger.debug(result);
       require('fs').writeFileSync('config.json',JSON.stringify(result));
 
       // Reload PM2 processes
       exec('pm2 reload serve_api --update-env && pm2 reload force_exit --update-env', (error, stdout, stderr) => {
         if (error) {
-          console.error(`Error reloading PM2 processes: ${error.message}`);
+          logger.error(`Error reloading PM2 processes: ${error.message}`);
           return;
         }
         if (stderr) {
-          console.error(`PM2 reload stderr: ${stderr}`);
+          logger.error(`PM2 reload stderr: ${stderr}`);
           return;
         }
-        console.log(`PM2 reload stdout: ${stdout}`);
+        logger.debug(`PM2 reload stdout: ${stdout}`);
       });
     }
   } catch (error) {
-    console.error('Error in autoupdateToken.js:', error);
+    logger.error('Error in autoupdateToken.js:', error);
   }
 })()
