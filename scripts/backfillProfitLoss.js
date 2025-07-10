@@ -23,7 +23,7 @@ const dbRunAsync = (sql, params) => {
 /**
  * Calculates profit/loss for trades and logs them to the 'realized_trades' table.
  * This function is idempotent and can be run multiple times.
- * It handles partial fills and both long and short positions.
+ * It handles partial fills and both long and short positions using FIFO matching.
  */
 async function backfillProfitLoss() {
   console.log('Starting backfill of profit/loss...');
@@ -38,70 +38,93 @@ async function backfillProfitLoss() {
       quantity INTEGER NOT NULL,
       profitLossAmount REAL NOT NULL,
       profitLossResult TEXT NOT NULL,
-      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(entryOrderId, exitOrderId)
     )
   `);
 
-  // Select all filled orders.
-  const orders = await dbAllAsync(
+  // Select all filled orders, ordered by creation time.
+  const allFilledOrders = await dbAllAsync(
     `SELECT * FROM orders 
      WHERE status = ? 
      ORDER BY createdTime ASC`,
     ['Filled']
   );
   
-  if (orders.length < 2) {
-    console.log('Not enough new filled orders to form a trade pair.');
+  if (allFilledOrders.length < 2) {
+    console.log('Not enough filled orders to form any trade pairs.');
     return;
   }
-  
-  // Track remaining quantities for each order to handle partial fills.
-  const remainingQuantities = new Map(orders.map(o => [o.orderId, o.quantity]));
 
-  for (const entryOrder of orders) {
-    let entryRemaining = remainingQuantities.get(entryOrder.orderId);
-
-    // Skip if this order has already been fully processed in this run
-    if (entryRemaining <= 0) {
-      continue;
+  // Group orders by symbol
+  const ordersBySymbol = allFilledOrders.reduce((acc, order) => {
+    if (!acc[order.symbol]) {
+      acc[order.symbol] = [];
     }
+    acc[order.symbol].push(order);
+    return acc;
+  }, {});
 
-    // Find subsequent orders to match against
-    for (const exitOrder of orders) {
-      let exitRemaining = remainingQuantities.get(exitOrder.orderId);
-      
-      // Conditions for a valid pair
-      const isMatch = exitRemaining > 0 &&
-                      entryOrder.symbol === exitOrder.symbol &&
-                      entryOrder.side !== exitOrder.side &&
-                      new Date(exitOrder.createdTime) > new Date(entryOrder.createdTime);
+  for (const symbol in ordersBySymbol) {
+    const ordersForSymbol = ordersBySymbol[symbol];
+    const openBuys = []; // FIFO queue for open buy orders
+    const openSells = []; // FIFO queue for open sell orders
 
-      if (isMatch) {
-        const tradeQuantity = Math.min(entryRemaining, exitRemaining);
+    for (const currentOrder of ordersForSymbol) {
+      // Initialize remaining quantity for the current order
+      currentOrder.remainingQuantity = currentOrder.quantity;
 
-        const profitLossRaw = (entryOrder.side === 'BUY')
-          ? (exitOrder.price - entryOrder.price)  // Long trade
-          : (entryOrder.price - exitOrder.price); // Short trade
+      if (currentOrder.side === 'BUY') {
+        // Try to match current BUY order with existing open SELL orders
+        while (openSells.length > 0 && currentOrder.remainingQuantity > 0) {
+          const oldestSell = openSells[0];
+          const tradeQuantity = Math.min(currentOrder.remainingQuantity, oldestSell.remainingQuantity);
 
-        const profitLossAmount = profitLossRaw * 25 * tradeQuantity;
-        const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
-        
-        // Log the realized trade into the 'realized_trades' table.
-        await dbRunAsync(
-          `INSERT INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult) VALUES (?, ?, ?, ?, ?)`,
-          [entryOrder.orderId, exitOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult]
-        );
-        console.log(`Logged trade: ${tradeQuantity} units between ${entryOrder.orderId} and ${exitOrder.orderId}. P/L: ${profitLossAmount}`);
-        
-        // Update the remaining quantities in our map.
-        entryRemaining -= tradeQuantity;
-        exitRemaining -= tradeQuantity;
-        remainingQuantities.set(entryOrder.orderId, entryRemaining);
-        remainingQuantities.set(exitOrder.orderId, exitRemaining);
+          const profitLossRaw = currentOrder.price - oldestSell.price; // Buy price - Sell price
+          const profitLossAmount = profitLossRaw * 25 * tradeQuantity; // Assuming 25 is contract multiplier
+          const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
 
-        // If the entry order is fully matched, break to find a match for the next entry order.
-        if (entryRemaining <= 0) {
-          break; 
+          await dbRunAsync(
+            `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult) VALUES (?, ?, ?, ?, ?)`,
+            [oldestSell.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult]
+          );
+          console.log(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestSell.orderId} (SELL) and ${currentOrder.orderId} (BUY). P/L: ${profitLossAmount}`);
+
+          currentOrder.remainingQuantity -= tradeQuantity;
+          oldestSell.remainingQuantity -= tradeQuantity;
+
+          if (oldestSell.remainingQuantity <= 0) {
+            openSells.shift(); // Remove fully matched SELL order
+          }
+        }
+        if (currentOrder.remainingQuantity > 0) {
+          openBuys.push(currentOrder); // Add remaining BUY quantity to open buys
+        }
+      } else if (currentOrder.side === 'SELL') {
+        // Try to match current SELL order with existing open BUY orders
+        while (openBuys.length > 0 && currentOrder.remainingQuantity > 0) {
+          const oldestBuy = openBuys[0];
+          const tradeQuantity = Math.min(currentOrder.remainingQuantity, oldestBuy.remainingQuantity);
+
+          const profitLossRaw = oldestBuy.price - currentOrder.price; // Buy price - Sell price
+          const profitLossAmount = profitLossRaw * 25 * tradeQuantity; // Assuming 25 is contract multiplier
+          const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
+
+          await dbRunAsync(
+            `INSERT OR IGNORE INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult) VALUES (?, ?, ?, ?, ?)`,
+            [oldestBuy.orderId, currentOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult]
+          );
+          console.log(`Logged trade for ${symbol}: ${tradeQuantity} units between ${oldestBuy.orderId} (BUY) and ${currentOrder.orderId} (SELL). P/L: ${profitLossAmount}`);
+
+          currentOrder.remainingQuantity -= tradeQuantity;
+          oldestBuy.remainingQuantity -= tradeQuantity;
+
+          if (oldestBuy.remainingQuantity <= 0) {
+            openBuys.shift(); // Remove fully matched BUY order
+          }
+        }
+        if (currentOrder.remainingQuantity > 0) {
+          openSells.push(currentOrder); // Add remaining SELL quantity to open sells
         }
       }
     }
