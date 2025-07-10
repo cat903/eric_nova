@@ -189,7 +189,7 @@ app.get('/api/open-positions', isAuthenticated, async (req, res) => {
 
 app.get('/api/order-history', isAuthenticated, (req, res) => {
   const { date } = req.query;
-  let query = 'SELECT * FROM orders';
+  let query = 'SELECT * FROM orders ORDER BY createdTime DESC';
   const params = [];
 
   if (date) {
