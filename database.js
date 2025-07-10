@@ -11,7 +11,7 @@ db.serialize(() => {
 
   db.run(`CREATE TABLE IF NOT EXISTS orders (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    orderId TEXT,
+    orderId TEXT UNIQUE,
     clientOrderId TEXT,
     symbol TEXT,
     side TEXT,

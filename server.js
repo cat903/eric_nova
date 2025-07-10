@@ -25,8 +25,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: new SQLiteStore({ db: 'sessions.db', dir: __dirname }), // Store sessions in sessions.db
-  cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'Lax' },
-  proxy: true // Add this line to tell express-session it's behind a proxy
+  cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'Lax' } // Set secure to true in production for HTTPS, add sameSite
 }));
 app.use(express.static(path.join(__dirname)));
 
@@ -68,10 +67,6 @@ function spawnWorker(scriptPath, data) {
 }
 
 function isAuthenticated(req, res, next) {
-  console.log('isAuthenticated middleware:');
-  console.log('  req.session.userId:', req.session.userId);
-  console.log('  req.protocol:', req.protocol);
-  console.log('  req.secure:', req.secure);
   if (req.session.userId) {
     next();
   } else {
