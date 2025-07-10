@@ -3,6 +3,7 @@ const path = require('path');
 require('dotenv').config();
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+const SQLiteStore = require('connect-sqlite3')(session);
 const cookieParser = require('cookie-parser');
 const getOpenPosition = require('./scripts/getOpenPosition.js');
 const getOrderHistory = require('./scripts/getOrderHistory.js');
@@ -18,10 +19,11 @@ const port = 3000;
 app.use(express.json());
 app.use(cookieParser());
 app.use(session({
-  secret: process.env.SESSION_SECRET || '5964b653c8c786b1b5aa3eb985758fe019cb8cd8926e8176dbed8558c4faecfb', 
+  secret: process.env.SESSION_SECRET || 'supersecretkey',
   resave: false,
   saveUninitialized: false,
-  cookie: { secure: process.env.NODE_ENV === 'production' }
+  store: new SQLiteStore({ db: 'sessions.db', dir: __dirname }), // Store sessions in sessions.db
+  cookie: { secure: process.env.NODE_ENV === 'production' } // Set secure to true in production for HTTPS
 }));
 app.use(express.static(path.join(__dirname)));
 
