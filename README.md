@@ -28,6 +28,6 @@ PLATFORM=`Platform`  (onenovaweb || demo)
   "entryPrice": "{{strategy.order.price}}",
   "type": "{{strategy.position_size}}",
   "lotSize": 1,
-  "X-API-Key":"dad140d05dde0eb784dab0d06965197efc8354ae47de6a8f900986d043ca7ba7"
+  "api_key": "your_very_secret_api_key_here"
 }
 ```
