@@ -3,7 +3,7 @@ const db = require('../database.js');
 async function backfillProfitLoss() {
   console.log('Starting backfill of profit/loss...');
 
-  db.all('SELECT * FROM orders WHERE status = ? AND profitLossAmount IS NULL ORDER BY createdTime ASC', ['Filled'], async (err, rows) => {
+  db.all('SELECT * FROM orders WHERE status = ? AND (profitLossAmount IS NULL OR profitLossAmount != profitLossAmount) ORDER BY createdTime ASC', ['Filled'], async (err, rows) => {
     if (err) {
       console.error('Error fetching orders for backfill:', err);
       return;
