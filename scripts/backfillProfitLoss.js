@@ -1,87 +1,116 @@
 const db = require('../database.js');
 
+// Helper to "promisify" db.all, making it compatible with async/await
+const dbAllAsync = (sql, params) => {
+  return new Promise((resolve, reject) => {
+    db.all(sql, params, (err, rows) => {
+      if (err) reject(err);
+      else resolve(rows);
+    });
+  });
+};
+
+// Helper to "promisify" db.run
+const dbRunAsync = (sql, params) => {
+    return new Promise((resolve, reject) => {
+        db.run(sql, params, function(err) {
+            if (err) reject(err);
+            else resolve(this);
+        });
+    });
+};
+
+/**
+ * Calculates profit/loss for trades and logs them to the 'realized_trades' table.
+ * This function is idempotent and can be run multiple times.
+ * It handles partial fills and both long and short positions.
+ */
 async function backfillProfitLoss() {
   console.log('Starting backfill of profit/loss...');
 
-  db.all('SELECT * FROM orders WHERE status = ? AND (profitLossAmount IS NULL OR profitLossAmount != profitLossAmount) ORDER BY createdTime ASC', ['Filled'], async (err, rows) => {
-    if (err) {
-      console.error('Error fetching orders for backfill:', err);
-      return;
+  // Create the logging table if it doesn't already exist.
+  // This makes the script safe and reliable.
+  await dbRunAsync(`
+    CREATE TABLE IF NOT EXISTS realized_trades (
+      tradeId INTEGER PRIMARY KEY AUTOINCREMENT,
+      entryOrderId TEXT NOT NULL,
+      exitOrderId TEXT NOT NULL,
+      quantity INTEGER NOT NULL,
+      profitLossAmount REAL NOT NULL,
+      profitLossResult TEXT NOT NULL,
+      createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+
+  // Select all filled orders.
+  const orders = await dbAllAsync(
+    `SELECT * FROM orders 
+     WHERE status = ? 
+     ORDER BY createdTime ASC`,
+    ['Filled']
+  );
+  
+  if (orders.length < 2) {
+    console.log('Not enough new filled orders to form a trade pair.');
+    return;
+  }
+  
+  // Track remaining quantities for each order to handle partial fills.
+  const remainingQuantities = new Map(orders.map(o => [o.orderId, o.quantity]));
+
+  for (const entryOrder of orders) {
+    let entryRemaining = remainingQuantities.get(entryOrder.orderId);
+
+    // Skip if this order has already been fully processed in this run
+    if (entryRemaining <= 0) {
+      continue;
     }
 
-    if (rows.length === 0) {
-      console.log('No filled orders found requiring profit/loss backfill.');
-      return;
-    }
+    // Find subsequent orders to match against
+    for (const exitOrder of orders) {
+      let exitRemaining = remainingQuantities.get(exitOrder.orderId);
+      
+      // Conditions for a valid pair
+      const isMatch = exitRemaining > 0 &&
+                      entryOrder.symbol === exitOrder.symbol &&
+                      entryOrder.side !== exitOrder.side &&
+                      new Date(exitOrder.createdTime) > new Date(entryOrder.createdTime);
 
-    const unprocessedOrders = [...rows];
-    const processedOrderIds = new Set();
+      if (isMatch) {
+        const tradeQuantity = Math.min(entryRemaining, exitRemaining);
 
-    for (let i = 0; i < unprocessedOrders.length; i++) {
-      const order1 = unprocessedOrders[i];
+        const profitLossRaw = (entryOrder.side === 'BUY')
+          ? (exitOrder.price - entryOrder.price)  // Long trade
+          : (entryOrder.price - exitOrder.price); // Short trade
 
-      if (processedOrderIds.has(order1.orderId)) {
-        continue; // Skip if already processed as part of a pair
-      }
+        const profitLossAmount = profitLossRaw * 25 * tradeQuantity;
+        const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
+        
+        // Log the realized trade into the 'realized_trades' table.
+        await dbRunAsync(
+          `INSERT INTO realized_trades (entryOrderId, exitOrderId, quantity, profitLossAmount, profitLossResult) VALUES (?, ?, ?, ?, ?)`,
+          [entryOrder.orderId, exitOrder.orderId, tradeQuantity, profitLossAmount, profitLossResult]
+        );
+        console.log(`Logged trade: ${tradeQuantity} units between ${entryOrder.orderId} and ${exitOrder.orderId}. P/L: ${profitLossAmount}`);
+        
+        // Update the remaining quantities in our map.
+        entryRemaining -= tradeQuantity;
+        exitRemaining -= tradeQuantity;
+        remainingQuantities.set(entryOrder.orderId, entryRemaining);
+        remainingQuantities.set(exitOrder.orderId, exitRemaining);
 
-      // Find a matching order (opposite side, same symbol, later time)
-      for (let j = i + 1; j < unprocessedOrders.length; j++) {
-        const order2 = unprocessedOrders[j];
-
-        if (processedOrderIds.has(order2.orderId)) {
-          continue; // Skip if already processed
+        // If the entry order is fully matched, break to find a match for the next entry order.
+        if (entryRemaining <= 0) {
+          break; 
         }
-
-        if (order1.symbol === order2.symbol && order1.side !== order2.side) {
-          // Found a potential pair
-          const entryOrder = new Date(order1.createdTime) < new Date(order2.createdTime) ? order1 : order2;
-          const exitOrder = new Date(order1.createdTime) < new Date(order2.createdTime) ? order2 : order1;
-
-          // For simplicity, assume full closure for the minimum quantity
-          const lotSize = Math.min(entryOrder.quantity, exitOrder.quantity);
-
-          if (lotSize > 0) {
-            let profitLossRaw = 0;
-            const entryPrice = entryOrder.price; // Use 'price' from DB for backfill
-            const exitPrice = exitOrder.price;   // Use 'price' from DB for backfill
-
-            if (entryOrder.side === 'SELL') { // Short position: Sold first, then bought to cover
-                profitLossRaw = entryPrice - exitPrice;
-            } else if (entryOrder.side === 'BUY') { // Long position: Bought first, then sold to close
-                profitLossRaw = exitPrice - entryPrice;
-            }
-
-            const profitLossResult = profitLossRaw >= 0 ? "Profit" : "Loss";
-            const profitLossAmount = (Math.abs(profitLossRaw) * 25 * lotSize);
-
-            if (profitLossAmount !== undefined && profitLossResult) {
-              db.run(
-                'UPDATE orders SET profitLossAmount = ?, profitLossResult = ? WHERE orderId = ?',
-                [profitLossAmount, profitLossResult, entryOrder.orderId],
-                function(err) {
-                  if (err) console.error('Error updating entry order P/L:', err);
-                  else console.log(`Backfilled P/L for entry order ${entryOrder.orderId}: ${profitLossResult} ${profitLossAmount}`);
-                }
-              );
-              db.run(
-                'UPDATE orders SET profitLossAmount = ?, profitLossResult = ? WHERE orderId = ?',
-                [profitLossAmount, profitLossResult, exitOrder.orderId],
-                function(err) {
-                  if (err) console.error('Error updating exit order P/L:', err);
-                  else console.log(`Backfilled P/L for exit order ${exitOrder.orderId}: ${profitLossResult} ${profitLossAmount}`);
-                }
-              );
-
-              processedOrderIds.add(entryOrder.orderId);
-              processedOrderIds.add(exitOrder.orderId);
-              break; // Move to the next unprocessed order1
-            }
-          }
-        }
       }
     }
-    console.log('Profit/loss backfill complete.');
-  });
+  }
+
+  console.log('Profit/loss backfill complete.');
 }
 
-backfillProfitLoss();
+// Run the function and catch any potential errors.
+backfillProfitLoss().catch(err => {
+  console.error("An error occurred during the backfill process:", err);
+});

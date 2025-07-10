@@ -35,59 +35,83 @@
   </nav>
 
   <div class="container-fluid mt-4">
-    <div class="row">
-      <div class="col-lg-12 mb-4">
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title mb-0">
-              <i class="bi bi-gear"></i>
-              Settings
-            </h2>
-          </div>
-          <div class="card-body">
-            <div class="form-check form-switch">
-              <input class="form-check-input" type="checkbox" id="autoshutoffToggle">
-              <label class="form-check-label" for="autoshutoffToggle">Enable Auto-Shutoff</label>
-            </div>
-            <div id="autoshutoffStatus" class="mt-2"></div>
-          </div>
-        </div>
-      </div>
-      <div class="col-lg-12 mb-4">
-        <div class="card">
-          <div class="card-header">
-            <h2 class="card-title mb-0">
-              <i class="bi bi-folder-open"></i>
-              Open Positions
-            </h2>
-          </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped table-hover" id="open-positions-table">
-                <thead></thead>
-                <tbody></tbody>
-              </table>
+    <ul class="nav nav-tabs" id="myTab" role="tablist">
+      <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="open-trades-tab" data-bs-toggle="tab" data-bs-target="#open-trades" type="button" role="tab" aria-controls="open-trades" aria-selected="true">Open Trades</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="trade-history-tab" data-bs-toggle="tab" data-bs-target="#trade-history" type="button" role="tab" aria-controls="trade-history" aria-selected="false">Trade History</button>
+      </li>
+      <li class="nav-item" role="presentation">
+        <button class="nav-link" id="completed-orders-tab" data-bs-toggle="tab" data-bs-target="#completed-orders" type="button" role="tab" aria-controls="completed-orders" aria-selected="false">Completed Orders</button>
+      </li>
+    </ul>
+    <div class="tab-content" id="myTabContent">
+      <div class="tab-pane fade show active" id="open-trades" role="tabpanel" aria-labelledby="open-trades-tab">
+        <div class="row mt-4">
+          <div class="col-lg-12 mb-4">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title mb-0">
+                  <i class="bi bi-folder-open"></i>
+                  Open Trades
+                </h2>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-striped table-hover" id="open-positions-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
-      <div class="col-lg-12">
-        <div class="card">
-          <div class="card-header">
-            <div class="d-flex justify-content-between align-items-center">
-              <h2 class="card-title mb-0">
-                <i class="bi bi-clock-history"></i>
-                Order History
-              </h2>
-              <input type="date" id="date-filter" class="form-control" style="width: auto;">
+      <div class="tab-pane fade" id="trade-history" role="tabpanel" aria-labelledby="trade-history-tab">
+        <div class="row mt-4">
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                  <h2 class="card-title mb-0">
+                    <i class="bi bi-clock-history"></i>
+                    Trade History
+                  </h2>
+                  <input type="date" id="date-filter" class="form-control" style="width: auto;">
+                </div>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-striped table-hover" id="order-history-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="card-body">
-            <div class="table-responsive">
-              <table class="table table-striped table-hover" id="order-history-table">
-                <thead></thead>
-                <tbody></tbody>
-              </table>
+        </div>
+      </div>
+      <div class="tab-pane fade" id="completed-orders" role="tabpanel" aria-labelledby="completed-orders-tab">
+        <div class="row mt-4">
+          <div class="col-lg-12">
+            <div class="card">
+              <div class="card-header">
+                <h2 class="card-title mb-0">
+                  <i class="bi bi-check-circle"></i>
+                  Completed Orders
+                </h2>
+              </div>
+              <div class="card-body">
+                <div class="table-responsive">
+                  <table class="table table-striped table-hover" id="realized-trades-table">
+                    <thead></thead>
+                    <tbody></tbody>
+                  </table>
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -96,10 +120,16 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
   <script>
     document.addEventListener('DOMContentLoaded', function () {
       const openPositionsTable = document.getElementById('open-positions-table');
       const orderHistoryTable = document.getElementById('order-history-table');
+      const realizedTradesTable = document.getElementById('realized-trades-table');
+
+      const openTradesTabBtn = document.getElementById('open-trades-tab');
+      const tradeHistoryTabBtn = document.getElementById('trade-history-tab');
+      const completedOrdersTabBtn = document.getElementById('completed-orders-tab');
 
       function populateTable(table, data) {
         const thead = table.querySelector('thead');
@@ -117,22 +147,32 @@
           return;
         }
 
-        const excludedFields = [
-          'icebergQuantity', 'time', 'updateTime', 'isWorking', 'accountId',
-          'lastExecutedQuantity', 'lastExecutedPrice', 'averageFillPrice',
-          'commission', 'commissionAsset', 'net', 'netAsset', 'rebate',
-          'rebateAsset', 'realizedPnl', 'unrealizedPnl', 'pnlAsset',
-          'goodTillDate', 'source', 'triggerPrice', 'stopLossPrice',
-          'takeProfitPrice', 'workingType', 'closePosition',
-          'trailingStopPercent', 'trailingStopActivationPrice', 'reduceOnly',
-          'positionSide', 'activatePrice', 'priceRate', 'selfTradePreventionMode',
-          'lastQuoteAssetTransacted', 'id', 'clientOrderId',
-          'Omnibus', 'DefaultDisplayName', 'Swap', 'IsDelayed', 'Topic',
-          'stopPrice', 'timeInForce', 'tradeId'
-        ];
+        let excludedFields = [];
+        if (table.id === 'order-history-table') {
+          excludedFields = [
+            'icebergQuantity', 'time', 'updateTime', 'isWorking', 'accountId',
+            'lastExecutedQuantity', 'lastExecutedPrice', 'averageFillPrice',
+            'commission', 'commissionAsset', 'net', 'netAsset', 'rebate',
+            'rebateAsset', 'realizedPnl', 'unrealizedPnl', 'pnlAsset',
+            'goodTillDate', 'source', 'triggerPrice', 'stopLossPrice',
+            'takeProfitPrice', 'workingType', 'closePosition',
+            'trailingStopPercent', 'trailingStopActivationPrice', 'reduceOnly',
+            'positionSide', 'activatePrice', 'priceRate', 'selfTradePreventionMode',
+            'lastQuoteAssetTransacted', 'id', 'clientOrderId',
+            'Omnibus', 'DefaultDisplayName', 'Swap', 'IsDelayed', 'Topic',
+            'stopPrice', 'timeInForce', 'tradeId', 'profitLossAmount', 'profitLossResult' // Exclude P/L from Trade History
+          ];
+        } else if (table.id === 'open-positions-table') {
+          excludedFields = [
+            'Omnibus', 'DefaultDisplayName', 'Swap', 'IsDelayed', 'Topic'
+          ];
+        } else if (table.id === 'realized-trades-table') {
+          excludedFields = [
+            'tradeId' // Exclude internal tradeId from realized trades
+          ];
+        }
 
         let headers = Object.keys(data[0]);
-        // Filter out excluded fields
         headers = headers.filter(header => !excludedFields.includes(header));
 
         const headerRow = document.createElement('tr');
@@ -147,7 +187,7 @@
           const tr = document.createElement('tr');
           headers.forEach(header => {
             const td = document.createElement('td');
-            if (table.id === 'order-history-table' && (header === 'profitLossAmount' || header === 'profitLossResult')) {
+            if (table.id === 'realized-trades-table' && (header === 'profitLossAmount' || header === 'profitLossResult')) {
               if (header === 'profitLossAmount') {
                 td.textContent = `RM ${parseFloat(rowData[header]).toFixed(2)}`;
                 td.classList.add(rowData.profitLossResult === 'Profit' ? 'text-success' : 'text-danger');
@@ -188,12 +228,35 @@
         }
       }
 
+      async function fetchRealizedTrades() {
+        try {
+          const response = await fetch('/api/realized-trades');
+          const data = await response.json();
+          populateTable(realizedTradesTable, data);
+        } catch (error) {
+          console.error('Error fetching realized trades:', error);
+        }
+      }
+
       document.getElementById('date-filter').addEventListener('change', (event) => {
         fetchOrderHistory(event.target.value);
       });
 
+      // Tab event listeners
+      openTradesTabBtn.addEventListener('shown.bs.tab', () => {
+        fetchOpenPositions();
+      });
+
+      tradeHistoryTabBtn.addEventListener('shown.bs.tab', () => {
+        fetchOrderHistory();
+      });
+
+      completedOrdersTabBtn.addEventListener('shown.bs.tab', () => {
+        fetchRealizedTrades();
+      });
+
+      // Initial data fetch for the active tab
       fetchOpenPositions();
-      fetchOrderHistory();
 
       // Logout Logic
       const logoutButton = document.getElementById('logoutButton');
@@ -257,9 +320,16 @@
 
       // Refresh data every 30 seconds
       setInterval(() => {
-        fetchOpenPositions();
-        const selectedDate = document.getElementById('date-filter').value;
-        fetchOrderHistory(selectedDate);
+        // Only refresh data for the currently active tab
+        const activeTab = document.querySelector('.tab-pane.show.active');
+        if (activeTab.id === 'open-trades') {
+          fetchOpenPositions();
+        } else if (activeTab.id === 'trade-history') {
+          const selectedDate = document.getElementById('date-filter').value;
+          fetchOrderHistory(selectedDate);
+        } else if (activeTab.id === 'completed-orders') {
+          fetchRealizedTrades();
+        }
         getAutoshutoffStatus(); // Also refresh autoshutoff status
       }, 30000);
     });

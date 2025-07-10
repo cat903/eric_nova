@@ -207,6 +207,17 @@ app.get('/api/order-history', isAuthenticated, (req, res) => {
   });
 });
 
+app.get('/api/realized-trades', isAuthenticated, (req, res) => {
+  db.all('SELECT * FROM realized_trades ORDER BY createdAt DESC', [], (err, rows) => {
+    if (err) {
+      console.error('Error getting realized trades:', err);
+      res.status(500).json({ error: 'Failed to get realized trades' });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
 async function fetchOrderHistory() {
   try {
     const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
