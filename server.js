@@ -133,14 +133,34 @@ async function fetchOrderHistory() {
 
 function scheduleOrderHistoryFetch() {
   const now = new Date();
-  const marketOpen = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 9, 30, 0);
-  const marketClose = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 16, 0, 0);
+
+  // Get current date components in Malaysia's timezone (GMT+8)
+  const malaysiaTime = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'Asia/Kuala_Lumpur',
+    year: 'numeric',
+    month: 'numeric',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hourCycle: 'h23' // Use 24-hour format
+  }).formatToParts(now).reduce((acc, part) => {
+    acc[part.type] = part.value;
+    return acc;
+  }, {});
+
+  const year = parseInt(malaysiaTime.year);
+  const month = parseInt(malaysiaTime.month) - 1; // Month is 0-indexed
+  const day = parseInt(malaysiaTime.day);
+
+  const marketOpen = new Date(year, month, day, 9, 30, 0);
+  const marketClose = new Date(year, month, day, 16, 0, 0);
 
   if (now >= marketOpen && now <= marketClose) {
     fetchOrderHistory();
   }
 
-  setTimeout(scheduleOrderHistoryFetch, 2 * 60 * 1000); // Check every 2 minutes
+  setTimeout(scheduleOrderHistoryFetch, 2 * 60 * 1000);W
 }
 
 app.listen(port, () => {
