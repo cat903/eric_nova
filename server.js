@@ -16,6 +16,8 @@ const { exec } = require('child_process');
 const app = express();
 const port = 3000;
 
+app.set('trust proxy', 1); // Trust Nginx as a proxy
+
 app.use(express.json());
 app.use(cookieParser());
 app.use(session({
@@ -65,6 +67,10 @@ function spawnWorker(scriptPath, data) {
 }
 
 function isAuthenticated(req, res, next) {
+  console.log('isAuthenticated middleware:');
+  console.log('  req.session.userId:', req.session.userId);
+  console.log('  req.protocol:', req.protocol);
+  console.log('  req.secure:', req.secure);
   if (req.session.userId) {
     next();
   } else {
@@ -137,6 +143,7 @@ app.post('/login', (req, res) => {
     const match = await bcrypt.compare(password, user.password);
     if (match) {
       req.session.userId = user.id;
+      console.log('User logged in. Session ID:', req.session.id, 'User ID:', req.session.userId);
       res.json({ message: 'Logged in successfully.' });
     } else {
       res.status(400).json({ message: 'Invalid credentials.' });
