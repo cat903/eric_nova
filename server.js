@@ -100,8 +100,6 @@ app.get('/api/order-history', (req, res) => {
   });
 });
 
-const getOrderHistory = require('./scripts/getOrderHistory.js');
-
 async function fetchOrderHistory() {
   try {
     const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
