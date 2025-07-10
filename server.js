@@ -23,7 +23,7 @@ app.use(session({
   resave: false,
   saveUninitialized: false,
   store: new SQLiteStore({ db: 'sessions.db', dir: __dirname }), // Store sessions in sessions.db
-  cookie: { secure: process.env.NODE_ENV === 'production' } // Set secure to true in production for HTTPS
+  cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'Lax' } // Set secure to true in production for HTTPS, add sameSite
 }));
 app.use(express.static(path.join(__dirname)));
 
