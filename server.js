@@ -6,6 +6,8 @@ const getOrderHistory = require('./scripts/getOrderHistory.js');
 const db = require('./database.js');
 const { Worker } = require('worker_threads');
 const fs = require('fs');
+const moment = require('moment-timezone');
+const { MARKET_OPEN_HOUR, MARKET_OPEN_MINUTE, MARKET_CLOSE_HOUR, MARKET_CLOSE_MINUTE, MARKET_TIMEZONE } = require('./scripts/marketConfig.js');
 
 const app = express();
 const port = 3000;
@@ -132,31 +134,11 @@ async function fetchOrderHistory() {
 }
 
 function scheduleOrderHistoryFetch() {
-  const now = new Date();
+  const now = moment().tz(MARKET_TIMEZONE);
+  const marketOpen = now.clone().hour(MARKET_OPEN_HOUR).minute(MARKET_OPEN_MINUTE).second(0).millisecond(0);
+  const marketClose = now.clone().hour(MARKET_CLOSE_HOUR).minute(MARKET_CLOSE_MINUTE).second(0).millisecond(0);
 
-  // Get current date components in Malaysia's timezone (GMT+8)
-  const malaysiaTime = new Intl.DateTimeFormat('en-US', {
-    timeZone: 'Asia/Kuala_Lumpur',
-    year: 'numeric',
-    month: 'numeric',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: 'numeric',
-    second: 'numeric',
-    hourCycle: 'h23' // Use 24-hour format
-  }).formatToParts(now).reduce((acc, part) => {
-    acc[part.type] = part.value;
-    return acc;
-  }, {});
-
-  const year = parseInt(malaysiaTime.year);
-  const month = parseInt(malaysiaTime.month) - 1; // Month is 0-indexed
-  const day = parseInt(malaysiaTime.day);
-
-  const marketOpen = new Date(year, month, day, 9, 30, 0);
-  const marketClose = new Date(year, month, day, 16, 0, 0);
-
-  if (now >= marketOpen && now <= marketClose) {
+  if (now.isBetween(marketOpen, marketClose)) {
     fetchOrderHistory();
   }
 
