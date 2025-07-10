@@ -47,7 +47,7 @@
           <div class="card-body">
             <div class="form-check form-switch">
               <input class="form-check-input" type="checkbox" id="autoshutoffToggle">
-              <label class="form-check-label" for="autoshutoffToggle">Enable Auto-Shutoff</label>
+              <label class="form-check-label" for="autoshutoffToggle">Enable Force-Exit</label>
             </div>
             <div id="autoshutoffStatus" class="mt-2"></div>
           </div>
@@ -366,7 +366,7 @@
           const response = await fetch('/api/autoshutoff/status');
           const data = await response.json();
           autoshutoffToggle.checked = data.enabled;
-          autoshutoffStatusDiv.textContent = data.enabled ? 'Auto-shutoff is currently enabled.' : 'Auto-shutoff is currently disabled.';
+          autoshutoffStatusDiv.textContent = data.enabled ? 'Force-exit is currently enabled.' : 'Force-exit is currently disabled.';
         } catch (error) {
           console.error('Error fetching auto-shutoff status:', error);
           autoshutoffStatusDiv.textContent = 'Could not fetch auto-shutoff status.';
