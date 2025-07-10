@@ -390,16 +390,20 @@ app.get('/api/autoshutoff/status', isAuthenticated, (req, res) => {
 });
 
 app.post('/api/autoshutoff/toggle', isAuthenticated, (req, res) => {
-  const { enable } = req.body;
+  const { enabled } = req.body;
   const controlFilePath = path.join(__dirname, 'autoshutoff.control');
 
   try {
-    if (enable) {
+    if (enabled) {
       fs.writeFileSync(controlFilePath, 'enabled');
       console.log('Autoshutoff enabled.');
     } else {
-      fs.unlinkSync(controlFilePath);
-      console.log('Autoshutoff disabled.');
+      if (fs.existsSync(controlFilePath)) {
+        fs.unlinkSync(controlFilePath);
+        console.log('Autoshutoff disabled.');
+      } else {
+        console.log('Autoshutoff control file not found, already disabled or never enabled.');
+      }
     }
 
     // Restart PM2 process for force_exit to apply changes

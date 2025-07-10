@@ -366,7 +366,7 @@
           const response = await fetch('/api/autoshutoff/status');
           const data = await response.json();
           autoshutoffToggle.checked = data.enabled;
-          autoshutoffStatusDiv.textContent = data.enabled ? 'Force-exit is currently enabled.' : 'Force-exit is currently disabled.';
+          
         } catch (error) {
           console.error('Error fetching auto-shutoff status:', error);
           autoshutoffStatusDiv.textContent = 'Could not fetch auto-shutoff status.';
