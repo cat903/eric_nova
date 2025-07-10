@@ -3,6 +3,29 @@ require('dotenv').config();
 
 const url = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetOrderHistory`;
 
+async function fetchWithRetry(url, headers, requestBody) {
+  const maxRetryAttempts = 10;
+  let retryCount = 0;
+  while (retryCount < maxRetryAttempts) {
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(15000)
+      });
+      const result = (await response.json());
+      const orderHistory = result.GetOrderHistoryResult;
+      return orderHistory;
+    } catch (error) {
+      if (error.name === "TimeoutError") {
+        console.log('15000 ms timeout while getting order history');
+      }
+      retryCount++;
+    }
+  }
+  return null;
+}
 
 const headers = {
   Accept: '*/*',
@@ -29,14 +52,8 @@ const requestBody = {
 async function getOrderHistory(config) {
   requestBody.Token = config.token;
   headers['Cookie'] = config.xSessionIv;
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: headers,
-    body: JSON.stringify(requestBody),
-  });
-  const result = (await response.json());
-  const orderHistory = result.GetOrderHistoryResult;
-  return orderHistory
+  const response = await fetchWithRetry(url, headers, requestBody);
+  return response
 };
 
 // (async function(){
@@ -45,3 +62,4 @@ async function getOrderHistory(config) {
 // })();
 
 module.exports = getOrderHistory
+

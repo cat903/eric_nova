@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Trading Dashboard</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/simple-datatables@latest/dist/style.css">
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    h1, h2 { color: #333; }
+    #order-history-table, #open-positions-table { width: 100%; }
+    .datatable-input { margin-bottom: 10px; }
+  </style>
+</head>
+<body>
+  <h1>Trading Dashboard</h1>
+
+  <h2>Open Positions</h2>
+  <table id="open-positions-table"></table>
+
+  <h2>Order History</h2>
+  <input type="date" id="date-filter" class="datatable-input">
+  <table id="order-history-table"></table>
+
+  <script src="https://cdn.jsdelivr.net/npm/simple-datatables@latest"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', function () {
+      const openPositionsTable = new simpleDatatables.DataTable('#open-positions-table', {
+        searchable: false,
+        paging: false,
+      });
+
+      const orderHistoryTable = new simpleDatatables.DataTable('#order-history-table');
+
+      async function fetchOpenPositions() {
+        const response = await fetch('/api/open-positions');
+        const data = await response.json();
+        const headers = Object.keys(data[0] || {});
+        openPositionsTable.insert({ headings: headers, data: data.map(Object.values) });
+      }
+
+      async function fetchOrderHistory(date = null) {
+        let url = '/api/order-history';
+        if (date) {
+          url += `?date=${date}`;
+        }
+        const response = await fetch(url);
+        const data = await response.json();
+        const headers = Object.keys(data[0] || {});
+        orderHistoryTable.destroy();
+        orderHistoryTable.init();
+        orderHistoryTable.insert({ headings: headers, data: data.map(Object.values) });
+      }
+
+      document.getElementById('date-filter').addEventListener('change', (event) => {
+        fetchOrderHistory(event.target.value);
+      });
+
+      fetchOpenPositions();
+      fetchOrderHistory();
+    });
+  </script>
+</body>
+</html>

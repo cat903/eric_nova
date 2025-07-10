@@ -1,19 +1,15 @@
-// server.js
-
 const express = require('express');
+const path = require('path');
 const getOpenPosition = require('./scripts/getOpenPosition.js');
-const helmet = require('helmet');
+const db = require('./database.js');
 const { Worker } = require('worker_threads');
-const app = express();
-
 const fs = require('fs');
-const CONTROL_FILE = './autoshutoff.control';
 
-// Middleware to set security HTTP headers
-app.use(helmet());
+const app = express();
+const port = 3000;
 
-// Middleware to parse JSON bodies
 app.use(express.json());
+app.use(express.static(path.join(__dirname)));
 
 function spawnWorker(scriptPath, data) {
     return new Promise((resolve, reject) => {
@@ -39,21 +35,11 @@ function spawnWorker(scriptPath, data) {
 }
 
 app.get('/', (req, res) => {
-    let forceExitStatus;
-    if (fs.existsSync(CONTROL_FILE)) {
-        forceExitStatus = '✅ Auto Force Exit ON';
-    }
-    else {
-        forceExitStatus = '⛔ Auto Force Exit OFF';
-    }
+  res.sendFile(path.join(__dirname, 'index.html'));
+});
 
-    res.status(200).json({ message: `server running, ${forceExitStatus}` });
-})
-
-// Define the POST /signal endpoint
 app.post('/signal', async (req, res) => {
     const webhookData = req.body;
-    // Process the webhook data as needed
     console.log('Received webhook:', webhookData);
     if (webhookData.type === '-1' || webhookData.type === '1') {
         console.log('Spawning worker for entry action...');
@@ -67,40 +53,37 @@ app.post('/signal', async (req, res) => {
     res.status(200).json({ message: 'Webhook processed successfully!' });
 });
 
-app.get('/enableForceExit', (req, res) => {
-    fs.writeFileSync(CONTROL_FILE, 'ENABLED');
-    console.log('✅ Auto Force Exit ENABLED');
-    res.status(200).json({ message: '✅ Auto Force Exit ENABLED' });
-})
-
-app.get('/disableForceExit', (req, res) => {
-    if (fs.existsSync(CONTROL_FILE)) {
-        fs.unlinkSync(CONTROL_FILE);
-    }
-    console.log('⛔ Auto Force Exit Disabled');
-    res.status(200).json({ message: '⛔ Auto Force Exit Disabled' });
-})
-
-app.get('/getOpenPosition', async (req, res) => {
-    const configData = await fs.readFileSync('./config.json', 'utf8');
-    const config = JSON.parse(configData);
+app.get('/api/open-positions', async (req, res) => {
+  try {
+    const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
     const openPositions = await getOpenPosition(config);
-    res.status(200).json({ message: openPositions });
-})
-
-// Handle undefined routes (404)
-app.use((req, res, next) => {
-    res.status(404).json({ error: 'Not Found' });
+    res.json(openPositions);
+  } catch (error) {
+    console.error('Error getting open positions:', error);
+    res.status(500).json({ error: 'Failed to get open positions' });
+  }
 });
 
-// Global error handler (500)
-app.use((err, req, res, next) => {
-    console.error('Server Error:', err.stack);
-    res.status(500).json({ error: 'Internal Server Error' });
+app.get('/api/order-history', (req, res) => {
+  const { date } = req.query;
+  let query = 'SELECT * FROM orders';
+  const params = [];
+
+  if (date) {
+    query += ' WHERE DATE(createdTime) = ?';
+    params.push(date);
+  }
+
+  db.all(query, params, (err, rows) => {
+    if (err) {
+      console.error('Error getting order history:', err);
+      res.status(500).json({ error: 'Failed to get order history' });
+      return;
+    }
+    res.json(rows);
+  });
 });
 
-// Start the server on port 3000
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+app.listen(port, () => {
+  console.log(`Server listening at http://localhost:${port}`);
 });

@@ -76,8 +76,7 @@ async function processExitCompletion(action, symbol, status, openPositions,serie
   }
 }
 
-async function executeForceMarketExitAction() {
-  const openPositions = await checkOpenPositions();
+async function executeForceMarketExitAction(openPositions) {
     if (!openPositions) {console.log('forceexit:checkifsessioninvalid',openPositions);console.log('forceexit:sessionexpired in nova platform')} ;
   if (openPositions.length===0) {console.log(`forceexit:no open order in ${process.env.PLATFORM} platform`)}
   if (!(openPositions[0]?.OpenQuantity)){console.log('forceexit:nova changed something',openPositions)}; //remove later
@@ -106,7 +105,7 @@ const closingTimes = [
   { day: 5, times: ["12:30", "18:00"] },          // Friday (No night market)
 ];
 
-function checkMarketClosing() {
+async function checkMarketClosing() {
   const now = moment().tz("Asia/Kuala_Lumpur");
   const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
 
@@ -117,13 +116,16 @@ function checkMarketClosing() {
     console.log('Auto-shutoff DISABLED - skipping market closing check');
     return;
   }
+
+  const openPositions = await checkOpenPositions();
+
   marketDay.times.forEach(closingTime => {
     const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, "Asia/Kuala_Lumpur");
     const diffMinutes = closingMoment.diff(now, 'minutes');
 
     if (diffMinutes >= 0 && diffMinutes <= 5) {
       console.log(`Market closing soon (${closingTime}), calling close()...`);
-      executeForceMarketExitAction()
+      executeForceMarketExitAction(openPositions)
     }
   });
 }

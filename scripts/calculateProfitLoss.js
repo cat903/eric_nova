@@ -6,6 +6,12 @@ const calculateProfitLoss = (orders, marketentryStatus, lotSize) => {
 
     const firstOrder = orders[0];
     const secondOrder = orders[1];
+
+    if (firstOrder.SeriesCode !== secondOrder.SeriesCode) {
+        console.log("Orders are not for the same instrument.");
+        return { error: "Orders are not for the same instrument." };
+    }
+
     const top = firstOrder.AveragePrice;
     const bottom = secondOrder.AveragePrice;
     const orderQuantity = parseInt(lotSize) || 0;
