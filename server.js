@@ -160,7 +160,7 @@ function scheduleOrderHistoryFetch() {
     fetchOrderHistory();
   }
 
-  setTimeout(scheduleOrderHistoryFetch, 2 * 60 * 1000);W
+  setTimeout(scheduleOrderHistoryFetch, 2 * 60 * 1000);
 }
 
 app.listen(port, () => {
