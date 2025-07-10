@@ -17,6 +17,9 @@ const { exec } = require('child_process');
 const app = express();
 const port = 3000;
 
+app.disable('x-powered-by'); // Disable X-Powered-By header
+app.set('etag', false); // Disable Etag header
+
 app.set('trust proxy', 1); // Trust Nginx as a proxy
 
 app.use(express.json());
