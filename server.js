@@ -416,7 +416,7 @@ app.post('/api/autoshutoff/toggle', isAuthenticated, (req, res) => {
         console.warn(`PM2 restart stderr: ${stderr}`);
       }
       console.log(`PM2 restart stdout: ${stdout}`);
-      res.json({ success: true, message: `Autoshutoff ${enable ? 'enabled' : 'disabled'} and PM2 process restarted.` });
+      res.json({ success: true, message: `Autoshutoff ${enabled ? 'enabled' : 'disabled'} and PM2 process restarted.` });
     });
 
   } catch (error) {
