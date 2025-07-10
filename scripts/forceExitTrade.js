@@ -101,28 +101,41 @@ const closingTimes = CLOSING_TIMES;
 
 async function checkMarketClosing() {
   const now = moment().tz(MARKET_TIMEZONE);
-  const currentDay = now.isoWeekday(); // Monday = 1, Sunday = 7
+  const currentDay = now.isoWeekday();
 
-
-  const marketDay = closingTimes.find(day => day.day === currentDay);
-  if (!marketDay) return; // No market today (Saturday/Sunday)
+  const marketDay = CLOSING_TIMES.find(day => day.day === currentDay);
+  if (!marketDay) return;
   if (!fs.existsSync(CONTROL_FILE)) {
     console.log('Auto-shutoff DISABLED - skipping market closing check');
     return;
   }
 
-  const openPositions = await checkOpenPositions();
+  let shouldExecuteForceExit = false;
+  let relevantClosingTimes = [];
 
   marketDay.times.forEach(closingTime => {
     const closingMoment = moment.tz(`${now.format('YYYY-MM-DD')} ${closingTime}`, MARKET_TIMEZONE);
     const diffMinutes = closingMoment.diff(now, 'minutes');
 
     if (diffMinutes >= 0 && diffMinutes <= 5) {
-      console.log(`Market closing soon (${closingTime}), calling close()...`);
-      executeForceMarketExitAction(openPositions)
+      shouldExecuteForceExit = true;
+      relevantClosingTimes.push(closingTime);
     }
   });
+
+  if (shouldExecuteForceExit) {
+    const openPositions = await checkOpenPositions();
+
+    if (openPositions) { 
+      relevantClosingTimes.forEach(closingTime => {
+        console.log(`Market closing soon (${closingTime}), calling close()...`);
+        executeForceMarketExitAction(openPositions);
+      });
+    } else {
+      console.log('Could not fetch open positions, skipping force exit action.');
+    }
+  }
 }
 
-// Run check every minute
+
 checkMarketClosing();
