@@ -30,11 +30,29 @@
         <i class="bi bi-graph-up-arrow"></i>
         Trading Dashboard
       </a>
+      <button class="btn btn-outline-light" id="logoutButton">Logout</button>
     </div>
   </nav>
 
   <div class="container-fluid mt-4">
     <div class="row">
+      <div class="col-lg-12 mb-4">
+        <div class="card">
+          <div class="card-header">
+            <h2 class="card-title mb-0">
+              <i class="bi bi-gear"></i>
+              Settings
+            </h2>
+          </div>
+          <div class="card-body">
+            <div class="form-check form-switch">
+              <input class="form-check-input" type="checkbox" id="autoshutoffToggle">
+              <label class="form-check-label" for="autoshutoffToggle">Enable Auto-Shutoff</label>
+            </div>
+            <div id="autoshutoffStatus" class="mt-2"></div>
+          </div>
+        </div>
+      </div>
       <div class="col-lg-12 mb-4">
         <div class="card">
           <div class="card-header">
@@ -99,7 +117,23 @@
           return;
         }
 
-        const headers = Object.keys(data[0]);
+        const excludedFields = [
+          'icebergQuantity', 'time', 'updateTime', 'isWorking', 'accountId',
+          'lastExecutedQuantity', 'lastExecutedPrice', 'averageFillPrice',
+          'commission', 'commissionAsset', 'net', 'netAsset', 'rebate',
+          'rebateAsset', 'realizedPnl', 'unrealizedPnl', 'pnlAsset',
+          'goodTillDate', 'source', 'triggerPrice', 'stopLossPrice',
+          'takeProfitPrice', 'workingType', 'closePosition',
+          'trailingStopPercent', 'trailingStopActivationPrice', 'reduceOnly',
+          'positionSide', 'activatePrice', 'priceRate', 'selfTradePreventionMode',
+          'lastQuoteAssetTransacted', 'id', 'clientOrderId',
+          'Omnibus', 'DefaultDisplayName', 'Swap', 'IsDelayed', 'Topic'
+        ];
+
+        let headers = Object.keys(data[0]);
+        // Filter out excluded fields
+        headers = headers.filter(header => !excludedFields.includes(header));
+
         const headerRow = document.createElement('tr');
         headers.forEach(header => {
           const th = document.createElement('th');
@@ -150,11 +184,72 @@
       fetchOpenPositions();
       fetchOrderHistory();
 
+      // Logout Logic
+      const logoutButton = document.getElementById('logoutButton');
+      logoutButton.addEventListener('click', async () => {
+        try {
+          const response = await fetch('/logout', {
+            method: 'POST',
+          });
+          if (response.ok) {
+            window.location.href = '/login.html'; // Redirect to login page after logout
+          } else {
+            console.error('Logout failed.');
+          }
+        } catch (error) {
+          console.error('Error during logout:', error);
+        }
+      });
+
+      // Autoshutoff Toggle Logic
+      const autoshutoffToggle = document.getElementById('autoshutoffToggle');
+      const autoshutoffStatusDiv = document.getElementById('autoshutoffStatus');
+
+      async function getAutoshutoffStatus() {
+        try {
+          const response = await fetch('/api/autoshutoff/status');
+          const data = await response.json();
+          autoshutoffToggle.checked = data.enabled;
+          autoshutoffStatusDiv.textContent = `Auto-shutoff is currently: ${data.enabled ? 'Enabled' : 'Disabled'}`;
+        } catch (error) {
+          console.error('Error fetching autoshutoff status:', error);
+          autoshutoffStatusDiv.textContent = 'Error fetching status.';
+        }
+      }
+
+      async function toggleAutoshutoff(enable) {
+        try {
+          const response = await fetch('/api/autoshutoff/toggle', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ enable }),
+          });
+          const data = await response.json();
+          if (data.success) {
+            autoshutoffStatusDiv.textContent = `Auto-shutoff is now: ${enable ? 'Enabled' : 'Disabled'}`;
+          } else {
+            autoshutoffStatusDiv.textContent = `Failed to toggle: ${data.message}`;
+          }
+        } catch (error) {
+          console.error('Error toggling autoshutoff:', error);
+          autoshutoffStatusDiv.textContent = 'Error toggling autoshutoff.';
+        }
+      }
+
+      autoshutoffToggle.addEventListener('change', (event) => {
+        toggleAutoshutoff(event.target.checked);
+      });
+
+      getAutoshutoffStatus();
+
       // Refresh data every 30 seconds
       setInterval(() => {
         fetchOpenPositions();
         const selectedDate = document.getElementById('date-filter').value;
         fetchOrderHistory(selectedDate);
+        getAutoshutoffStatus(); // Also refresh autoshutoff status
       }, 30000);
     });
   </script>
