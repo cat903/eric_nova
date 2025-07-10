@@ -29,7 +29,7 @@
 </head>
 <body>
   <div class="login-container">
-    <h2 class="text-center mb-4">Login</h2>
+    <h2 id="formTitle" class="text-center mb-4">Login</h2>
     <form id="loginForm">
       <div class="mb-3">
         <label for="username" class="form-label">Username</label>
@@ -46,7 +46,6 @@
     </form>
 
     <form id="registerForm" style="display: none;">
-      <h2 class="text-center mb-4">Register</h2>
       <div class="mb-3">
         <label for="regUsername" class="form-label">Username</label>
         <input type="text" class="form-control" id="regUsername" required>
@@ -72,11 +71,13 @@
       const showRegisterLink = document.getElementById('showRegister');
       const showLoginLink = document.getElementById('showLogin');
       const messageDiv = document.getElementById('message');
+      const formTitle = document.getElementById('formTitle');
 
       showRegisterLink.addEventListener('click', (e) => {
         e.preventDefault();
         loginForm.style.display = 'none';
         registerForm.style.display = 'block';
+        formTitle.textContent = 'Register'; // Update title
         messageDiv.textContent = '';
       });
 
@@ -84,6 +85,7 @@
         e.preventDefault();
         registerForm.style.display = 'none';
         loginForm.style.display = 'block';
+        formTitle.textContent = 'Login'; // Update title
         messageDiv.textContent = '';
       });
 
@@ -126,6 +128,7 @@
             // Optionally, switch to login form after successful registration
             loginForm.style.display = 'block';
             registerForm.style.display = 'none';
+            formTitle.textContent = 'Login'; // Update title after successful registration
             document.getElementById('username').value = username;
             document.getElementById('password').value = '';
           }
