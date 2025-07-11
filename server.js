@@ -31,6 +31,14 @@ app.use(session({
   store: new SQLiteStore({ db: 'sessions.db', dir: __dirname }), // Store sessions in sessions.db
   cookie: { secure: process.env.NODE_ENV === 'production', sameSite: 'Lax' } // Set secure to true in production for HTTPS, add sameSite
 }));
+app.get('/', (req, res) => {
+  if (req.session.userId) {
+    res.sendFile(path.join(__dirname, 'index.html'));
+  } else {
+    res.redirect('/login.html');
+  }
+});
+
 app.use(express.static(path.join(__dirname)));
 
 const activeWorkers = new Set();
@@ -98,15 +106,6 @@ function isAuthenticated(req, res, next) {
     res.status(401).json({ message: 'Unauthorized' });
   }
 }
-
-
-app.get('/', (req, res) => {
-  if (req.session.userId) {
-    res.sendFile(path.join(__dirname, 'index.html'));
-  } else {
-    res.redirect('/login.html');
-  }
-});
 
 app.post('/register', async (req, res) => {
   if (process.env.ALLOW_REGISTRATION === 'false' || process.env.ALLOW_REGISTRATION === '0') {

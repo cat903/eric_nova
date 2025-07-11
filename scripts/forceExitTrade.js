@@ -20,7 +20,7 @@ async function logAndNotify(message) {
   await sendtoDiscord(message);
 }
 
-async function getConfirmedOrderHistoryWithRetry(config, expectedAction, algoName="default", seriesCode, maxRetries = 6, retryDelayMs = 5000) {
+async function getConfirmedOrderHistoryWithRetry(config, expectedAction, seriesCode, maxRetries = 6, retryDelayMs = 5000) {
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
       const orderHistory = await getOrderHistory(config);
@@ -33,7 +33,7 @@ async function getConfirmedOrderHistoryWithRetry(config, expectedAction, algoNam
         }
       }
     } catch (error) {
-      await logAndNotify(`Error fetching order history for ${algoName} on attempt ${attempt}: ${error.message}`);
+      await logAndNotify(`Error fetching order history on attempt ${attempt}: ${error.message}`);
     }
     if (attempt < maxRetries) {
       await delay(retryDelayMs);
@@ -42,7 +42,7 @@ async function getConfirmedOrderHistoryWithRetry(config, expectedAction, algoNam
   return null;
 }
 
-async function checkOpenPositions(retryn=3) {
+async function checkOpenPositions(retryn = 3) {
   const openPositions = await getOpenPosition(require('../config.json'));
   if ((openPositions?.length !== 0 && openPositions?.length !== 1) && retryn > 0) {
     const errorMessage = `${retryn} ${process.env.PLATFORM} server timed out, rejected force exit`;
@@ -54,12 +54,12 @@ async function checkOpenPositions(retryn=3) {
 }
 
 
-async function processExitCompletion(action, symbol, status, openPositions,seriesCode) {
+async function processExitCompletion(action, symbol, status, openPositions, seriesCode) {
   if (!openPositions?.length) {
     const timestamp = moment().tz("Asia/Kuala_Lumpur").format('YYYY-MM-DD HH:mm:ss');
-    const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), action, algoName, seriesCode);
+    const confirmedOrderHistory = await getConfirmedOrderHistoryWithRetry(require('../config.json'), action, seriesCode);
     if (!confirmedOrderHistory) {
-      const failureMessage = `${timestamp} ->-> ${algoName} ->-> Exit for ${symbol} appears complete (no open positions), but FAILED TO CONFIRM in order history. P/L calculation SKIPPED.`;
+      const failureMessage = `${timestamp} ->-> Exit for ${symbol} appears complete (no open positions), but FAILED TO CONFIRM in order history. P/L calculation SKIPPED.`;
       await logAndNotify(failureMessage);
       return true;
     }
@@ -79,20 +79,20 @@ async function processExitCompletion(action, symbol, status, openPositions,serie
 }
 
 async function executeForceMarketExitAction(openPositions) {
-    if (!openPositions) {logger.debug('forceexit:checkifsessioninvalid',openPositions);logger.debug('forceexit:sessionexpired in nova platform')} ;
-  if (openPositions.length===0) {logger.debug(`forceexit:no open order in ${process.env.PLATFORM} platform`)}
-  if (!(openPositions[0]?.OpenQuantity)){logger.debug('forceexit:nova changed something',openPositions)}; //remove later
+  if (!openPositions) { logger.debug('forceexit:checkifsessioninvalid', openPositions); logger.debug('forceexit:sessionexpired in nova platform') };
+  if (openPositions.length === 0) { logger.debug(`forceexit:no open order in ${process.env.PLATFORM} platform`) }
+  if (!(openPositions[0]?.OpenQuantity)) { logger.debug('forceexit:nova changed something', openPositions) }; //remove later
   const tradeInfo = openPositions[0]
   const action = (tradeInfo?.OpenQuantity < 0) ? 'buy' : 'sell';
   const status = (tradeInfo?.OpenQuantity < 0) ? 'sell' : 'buy';
-  logger.debug(`openStatus:${status},forceExitStatus:${action},positionOpen:${openPositions.length === 1}, proccedingForceExit:${((openPositions.length === 1) && (action!==status))}`);
+  logger.debug(`openStatus:${status},forceExitStatus:${action},positionOpen:${openPositions.length === 1}, proccedingForceExit:${((openPositions.length === 1) && (action !== status))}`);
   if (openPositions.length === 1) {
     await marketOrder(action, require('../config.json'), tradeInfo.SeriesCode);
     await logAndNotify(`Asking For Force Exit ->-> ${action} ->-> ${tradeInfo.SeriesTradeCode}`);
     await delay(15000);
 
     const refreshedOpenPositions = await checkOpenPositions();
-    await processExitCompletion(action, tradeInfo.SeriesTradeCode, status, refreshedOpenPositions,tradeInfo.SeriesCode);
+    await processExitCompletion(action, tradeInfo.SeriesTradeCode, status, refreshedOpenPositions, tradeInfo.SeriesCode);
   }
 }
 
@@ -127,7 +127,7 @@ async function checkMarketClosing() {
   if (shouldExecuteForceExit) {
     const openPositions = await checkOpenPositions();
 
-    if (openPositions) { 
+    if (openPositions) {
       relevantClosingTimes.forEach(closingTime => {
         logger.debug(`Market closing soon (${closingTime}), calling close()...`);
         executeForceMarketExitAction(openPositions);

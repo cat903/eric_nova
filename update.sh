@@ -11,6 +11,7 @@ ENV_FILE=".env"
 BACKUP_ENV_FILE=".env.bak"
 REPO_URL="https://github.com/cat903/eric_nova.git"
 AUTOSHUTSTATUS="autoshutoff.control"
+DATABASE_FILE="orders.db"
 
 # --- Backup ---
 # Check if the project directory and .env file exist
@@ -28,6 +29,13 @@ if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/$AUTOSHUTSTATUS" ]; then
     cp -p "$PROJECT_DIR/$AUTOSHUTSTATUS" "$AUTOSHUTSTATUS"
 else
     echo "No existing $PROJECT_DIR/$AUTOSHUTSTATUS found to back up."
+fi
+
+if [ -d "$PROJECT_DIR" ] && [ -f "$PROJECT_DIR/$DATABASE_FILE" ]; then
+    echo "Backing up existing $DATABASE_FILE file from $PROJECT_DIR/ to ~/orders.db..."
+    cp -p "$PROJECT_DIR/$DATABASE_FILE" "orders.db"
+else
+    echo "No existing $PROJECT_DIR/$DATABASE_FILE found to back up."
 fi
 
 # --- Cleanup ---
@@ -60,6 +68,13 @@ else
     # Optional: Create an empty .env if no backup exists and one is always needed
     # touch "$ENV_FILE"
     # echo "Created an empty $ENV_FILE as no backup was found."
+fi
+
+if [ -f "../$DATABASE_FILE" ]; then
+    echo "Restoring $DATABASE_FILE from backup..."
+    mv "../$DATABASE_FILE" "$DATABASE_FILE"
+else
+    echo "No backup file (~/$DATABASE_FILE) found to restore."
 fi
 
 # --- Environment Setup (NVM) ---
@@ -113,7 +128,7 @@ pm2 list # Show status of applications managed by PM2
 
 # --- Clear Screen and Conditional .env Update ---
 clear
-read -r -p "Do you want to update the .env file (username, password, webhook, platform)? (y/N): " UPDATE_CHOICE
+read -r -p "Do you want to update the .env file (username, password, webhook, platform, allow registration)? (y/N): " UPDATE_CHOICE
 
 # Convert choice to lowercase for case-insensitive comparison (Y/y)
 # Default to 'n' if user just presses Enter
@@ -142,6 +157,8 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
 
     read -r -p "Please enter your Desired Platform: " PLATFORM
 
+    read -r -p "Allow new user registrations? (true/false): " ALLOW_REGISTRATION
+
     echo "Creating/Overwriting .env file with new credentials..."
     # WARNING: This overwrites the entire .env file. Any other variables
     # previously in .env (restored from backup) will be lost unless added here.
@@ -150,6 +167,7 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
       echo "USERP=$PASSWORD"
       echo "DISCORDWEBHOOK=$DISCORD"
       echo "PLATFORM=$PLATFORM"
+      echo "ALLOW_REGISTRATION=$ALLOW_REGISTRATION"
       # Add any other essential default variables here if needed
     } > "$ENV_FILE" # Ensure this writes to the correct .env file path in the current directory
 

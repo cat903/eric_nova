@@ -88,7 +88,7 @@ sudo certbot --nginx -d "$HOSTNAME"
 # Step 11: Configure Nginx to use proxy pass at port 3000
 echo "Configuring Nginx to use proxy pass at port 3000..."
 NGINX_CONF="/etc/nginx/sites-available/default"
-sudo sed -i "$(awk '/location \/ {/{n++} n==3 {print FNR; exit}' $NGINX_CONF),$(awk '/location \/ {/{n++} n==3 {p=1} p && /}/ {print FNR; exit}' $NGINX_CONF)c\location / {\n    proxy_pass http://localhost:3000;\n    proxy_http_version 1.1;\n    proxy_set_header Upgrade \$http_upgrade;\n    proxy_set_header Connection \"upgrade\";\n    proxy_set_header Host \$host;\n    proxy_set_header X-Real-IP \$remote_addr;\n    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n    proxy_cache_bypass \$http_upgrade;\n}" $NGINX_CONF
+sudo sed -i "$(awk '/location \/ {/{n++} n==3 {print FNR; exit}' $NGINX_CONF),$(awk '/location \/ {/{n++} n==3 {p=1} p && /}/ {print FNR; exit}' $NGINX_CONF)c\location / {\n    proxy_pass http://localhost:3000;\n    proxy_http_version 1.1;\n    proxy_set_header Upgrade \$http_upgrade;\n    proxy_set_header Connection \"upgrade\";\n    proxy_set_header Host \$host;\n    proxy_set_header X-Forwarded-Proto \$scheme;\n    proxy_set_header X-Real-IP \$remote_addr;\n    proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;\n    proxy_cache_bypass \$http_upgrade;\n}" $NGINX_CONF
 
 
 
