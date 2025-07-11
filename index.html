@@ -50,6 +50,25 @@
               <label class="form-check-label" for="autoshutoffToggle">Enable Force-Exit</label>
             </div>
             <div id="autoshutoffStatus" class="mt-2"></div>
+            <div class="mt-4">
+              <h4>Change Password</h4>
+              <form id="changePasswordForm">
+                <div class="mb-3">
+                  <label for="oldPassword" class="form-label">Old Password</label>
+                  <input type="password" class="form-control" id="oldPassword" required>
+                </div>
+                <div class="mb-3">
+                  <label for="newPassword" class="form-label">New Password</label>
+                  <input type="password" class="form-control" id="newPassword" required>
+                </div>
+                <div class="mb-3">
+                  <label for="confirmPassword" class="form-label">Confirm New Password</label>
+                  <input type="password" class="form-control" id="confirmPassword" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Change Password</button>
+              </form>
+              <div id="changePasswordMessage" class="mt-3"></div>
+            </div>
           </div>
         </div>
       </div>
@@ -397,6 +416,44 @@
 
       // Initial fetch for auto-shutoff status
       getAutoshutoffStatus();
+
+      // Change Password Logic
+      const changePasswordForm = document.getElementById('changePasswordForm');
+      const changePasswordMessage = document.getElementById('changePasswordMessage');
+
+      changePasswordForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const oldPassword = document.getElementById('oldPassword').value;
+        const newPassword = document.getElementById('newPassword').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+
+        if (newPassword !== confirmPassword) {
+          changePasswordMessage.textContent = 'New passwords do not match.';
+          changePasswordMessage.classList.add('text-danger');
+          return;
+        }
+
+        try {
+          const response = await fetch('/api/change-password', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ oldPassword, newPassword }),
+          });
+          const data = await response.json();
+          changePasswordMessage.textContent = data.message;
+          if (response.ok) {
+            changePasswordMessage.classList.remove('text-danger');
+            changePasswordMessage.classList.add('text-success');
+            changePasswordForm.reset();
+          } else {
+            changePasswordMessage.classList.add('text-danger');
+          }
+        } catch (error) {
+          console.error('Change password error:', error);
+          changePasswordMessage.textContent = 'An error occurred while changing the password.';
+          changePasswordMessage.classList.add('text-danger');
+        }
+      });
     });
   </script>
 </body>

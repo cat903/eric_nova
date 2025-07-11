@@ -428,6 +428,49 @@ app.post('/api/autoshutoff/toggle', isAuthenticated, (req, res) => {
   }
 });
 
+app.post('/api/change-password', isAuthenticated, async (req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  const userId = req.session.userId;
+
+  if (!oldPassword || !newPassword) {
+    return res.status(400).json({ message: 'Old and new passwords are required.' });
+  }
+
+  if (oldPassword === newPassword) {
+    return res.status(400).json({ message: 'New password cannot be the same as the old password.' });
+  }
+
+  db.get('SELECT * FROM users WHERE id = ?', [userId], async (err, user) => {
+    if (err) {
+      logger.error('Error fetching user:', err);
+      return res.status(500).json({ message: 'Error changing password.' });
+    }
+    if (!user) {
+      // This case should ideally not happen if the user is authenticated
+      return res.status(404).json({ message: 'User not found.' });
+    }
+
+    const match = await bcrypt.compare(oldPassword, user.password);
+    if (!match) {
+      return res.status(400).json({ message: 'Invalid old password.' });
+    }
+
+    try {
+      const hashedPassword = await bcrypt.hash(newPassword, 10);
+      db.run('UPDATE users SET password = ? WHERE id = ?', [hashedPassword, userId], function(updateErr) {
+        if (updateErr) {
+          logger.error('Error updating password:', updateErr);
+          return res.status(500).json({ message: 'Error updating password.' });
+        }
+        res.json({ message: 'Password updated successfully.' });
+      });
+    } catch (hashError) {
+      logger.error('Error hashing new password:', hashError);
+      res.status(500).json({ message: 'Error processing new password.' });
+    }
+  });
+});
+
 app.listen(port, () => {
   logger.info(`Server listening at http://localhost:${port}`);
   scheduleOrderHistoryFetch();
