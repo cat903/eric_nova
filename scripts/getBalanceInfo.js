@@ -196,11 +196,23 @@ async function getBalanceInfo(config) {
         clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance / usdToMyrRate.ConversionRate;
       } else {
         logger.warn('USD to MYR exchange rate not found. Defaulting LedgerBalanceMYR to LedgerBalance (USD).');
-        clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance; // Default to USD if rate not found
+        clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance; // Default to USD if rates not fetched
       }
     } else {
       logger.warn('Failed to fetch exchange rates. Defaulting LedgerBalanceMYR to LedgerBalance (USD).');
       clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance; // Default to USD if rates not fetched
+    }
+
+    // Convert InitialMargin to MYR
+    if (clientFunds.InitialMargin) {
+      if (exchangeRates && usdToMyrRate) {
+        clientFunds.InitialMarginMYR = clientFunds.InitialMargin / usdToMyrRate.ConversionRate;
+      } else {
+        logger.warn('Failed to fetch exchange rates or USD to MYR rate not found. Defaulting InitialMarginMYR to InitialMargin (USD).');
+        clientFunds.InitialMarginMYR = clientFunds.InitialMargin; // Default to USD if rates not fetched or rate not found
+      }
+    } else {
+      clientFunds.InitialMarginMYR = 0; // Default to 0 if InitialMargin is not available
     }
 
     // Calculate AccountEquity after LedgerBalanceMYR is guaranteed to be set
