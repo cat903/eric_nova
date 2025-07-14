@@ -3,3 +3,4 @@ pnpm-lock.yaml
 sampledata.js
 .env
 *.db
+config.json
