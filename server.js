@@ -368,6 +368,28 @@ app.get('/api/realized-trades/count', isAuthenticated, (req, res) => {
   });
 });
 
+app.get('/api/order-history/all', isAuthenticated, (req, res) => {
+  db.all('SELECT * FROM orders ORDER BY createdTime DESC', [], (err, rows) => {
+    if (err) {
+      logger.error('Error getting all order history:', err);
+      res.status(500).json({ error: 'Failed to get all order history' });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
+app.get('/api/realized-trades/all', isAuthenticated, (req, res) => {
+  db.all('SELECT * FROM realized_trades ORDER BY createdAt DESC', [], (err, rows) => {
+    if (err) {
+      logger.error('Error getting all realized trades:', err);
+      res.status(500).json({ error: 'Failed to get all realized trades' });
+      return;
+    }
+    res.json(rows);
+  });
+});
+
 
 
 async function fetchOrderHistory() {

@@ -135,7 +135,10 @@
                       <i class="bi bi-clock-history"></i>
                       Trade History
                     </h2>
-                    <input type="date" id="trade-history-date-filter" class="form-control" style="width: auto;">
+                    <div class="d-flex">
+                      <input type="date" id="trade-history-date-filter" class="form-control me-2" style="width: auto;">
+                      <button class="btn btn-primary" id="download-trade-history">Download</button>
+                    </div>
                   </div>
                   <div class="table-responsive">
                     <table class="table table-striped table-hover" id="order-history-table">
@@ -154,7 +157,10 @@
                       <i class="bi bi-check-circle"></i>
                       Completed Orders
                     </h2>
-                    <input type="date" id="completed-orders-date-filter" class="form-control" style="width: auto;">
+                    <div class="d-flex">
+                      <input type="date" id="completed-orders-date-filter" class="form-control me-2" style="width: auto;">
+                      <button class="btn btn-primary" id="download-completed-orders">Download</button>
+                    </div>
                   </div>
                   <div class="table-responsive">
                     <table class="table table-striped table-hover" id="realized-trades-table">
@@ -493,41 +499,56 @@
       // Initial fetch for auto-shutoff status
       getAutoshutoffStatus();
 
-      // Change Password Logic
-      const changePasswordFormModal = document.getElementById('changePasswordFormModal');
-      const changePasswordMessageModal = document.getElementById('changePasswordMessageModal');
+      // Download functionality
+      async function downloadCSV(data, filename, desiredHeaders = null) {
+        const csvRows = [];
+        const headers = desiredHeaders || Object.keys(data[0]);
+        csvRows.push(headers.join(','));
 
-      changePasswordFormModal.addEventListener('submit', async (e) => {
-        e.preventDefault();
-        const oldPassword = document.getElementById('oldPasswordModal').value;
-        const newPassword = document.getElementById('newPasswordModal').value;
-        const confirmPassword = document.getElementById('confirmPasswordModal').value;
-
-        if (newPassword !== confirmPassword) {
-          changePasswordMessageModal.textContent = 'New passwords do not match.';
-          changePasswordMessageModal.classList.add('text-danger');
-          return;
+        for (const row of data) {
+          const values = headers.map(header => {
+            let value = row[header];
+            if (value === null || value === undefined) {
+              value = '';
+            }
+            const escaped = ('' + value).replace(/"/g, '""');
+            return `"${escaped}"`;
+          });
+          csvRows.push(values.join(','));
         }
 
+        const csvString = csvRows.join('\n');
+        const blob = new Blob([csvString], { type: 'text/csv' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.setAttribute('hidden', '');
+        a.setAttribute('href', url);
+        a.setAttribute('download', filename);
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
+      document.getElementById('download-trade-history').addEventListener('click', async () => {
         try {
-          const response = await fetch('/api/change-password', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ oldPassword, newPassword }),
-          });
+          const response = await fetch('/api/order-history/all');
           const data = await response.json();
-          changePasswordMessageModal.textContent = data.message;
-          if (response.ok) {
-            changePasswordMessageModal.classList.remove('text-danger');
-            changePasswordMessageModal.classList.add('text-success');
-            changePasswordFormModal.reset();
-          } else {
-            changePasswordMessageModal.classList.add('text-danger');
-          }
+          const headers = ['orderId', 'symbol', 'side', 'quantity', 'price', 'status', 'createdTime', 'tradeId'];
+          downloadCSV(data, 'trade_history.csv', headers);
         } catch (error) {
-          console.error('Change password error:', error);
-          changePasswordMessageModal.textContent = 'An error occurred while changing the password.';
-          changePasswordMessageModal.classList.add('text-danger');
+          console.error('Error downloading trade history:', error);
+        }
+      });
+
+      document.getElementById('download-completed-orders').addEventListener('click', async () => {
+        try {
+          const response = await fetch('/api/realized-trades/all');
+          const data = await response.json();
+          const excludedFields = ['tradeId'];
+          const headers = Object.keys(data[0]).filter(header => !excludedFields.includes(header));
+          downloadCSV(data, 'completed_orders.csv', headers);
+        } catch (error) {
+          console.error('Error downloading completed orders:', error);
         }
       });
     });
