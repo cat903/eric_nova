@@ -8,6 +8,9 @@ const SQLiteStore = require('connect-sqlite3')(session);
 const cookieParser = require('cookie-parser');
 const getOpenPosition = require('./scripts/getOpenPosition.js');
 const getOrderHistory = require('./scripts/getOrderHistory.js');
+const { getBalanceInfo } = require('./scripts/getBalanceInfo.js');
+
+const config = require('./config.json');
 const db = require('./database.js');
 const { Worker } = require('worker_threads');
 const fs = require('fs');
@@ -264,6 +267,21 @@ app.get('/api/open-positions', isAuthenticated, async (req, res) => {
   }
 });
 
+app.get('/api/client-funds', isAuthenticated, async (req, res) => {
+  try {
+    const config = JSON.parse(fs.readFileSync('./config.json', 'utf8'));
+    const { clientFunds, unrealizedPnLReport } = await getBalanceInfo(config);
+    res.json(clientFunds);
+  } catch (error) {
+    logger.error('Error getting client funds:', error);
+    res.status(500).json({ error: 'Failed to get client funds' });
+  }
+});
+
+app.get('/api/account', isAuthenticated, (req, res) => {
+  res.json({ account: process.env.USERE });
+});
+
 app.get('/api/order-history', isAuthenticated, (req, res) => {
   const { date, limit = 10, offset = 0 } = req.query;
   let query = 'SELECT * FROM orders';
@@ -349,6 +367,8 @@ app.get('/api/realized-trades/count', isAuthenticated, (req, res) => {
     res.json({ count: row.count });
   });
 });
+
+
 
 async function fetchOrderHistory() {
   try {
