@@ -216,6 +216,7 @@ async function getBalanceInfo(config) {
 
     // Calculate AccountEquity after LedgerBalanceMYR is guaranteed to be set
     clientFunds.AccountEquity = clientFunds.LedgerBalanceMYR + totalUnrealizedPnL;
+    clientFunds.AvailableMargin = clientFunds.AccountEquity - clientFunds.Margin;
   }
 
   return {
