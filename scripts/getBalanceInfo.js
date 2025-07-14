@@ -182,6 +182,7 @@ async function calculateUnrealizedPnL(config) {
 // Consolidated function
 async function getBalanceInfo(config) {
   const clientFunds = await fetchClientFundsData(config);
+  console.log(clientFunds)
   const unrealizedPnLReport = await calculateUnrealizedPnL(config);
   const totalUnrealizedPnL = unrealizedPnLReport.reduce((acc, curr) => acc + curr.unrealizedPnL, 0);
 
@@ -190,8 +191,8 @@ async function getBalanceInfo(config) {
     clientFunds.AccountEquity = clientFunds.LedgerBalanceMYR + totalUnrealizedPnL;
 
     const exchangeRates = await fetchExchangeRates(config);
+    const usdToMyrRate = exchangeRates.find(rate => rate.BaseCurrencyCode === 'MYR' && rate.SettleCurrencyCode === 'USD');
     if (exchangeRates) {
-      const usdToMyrRate = exchangeRates.find(rate => rate.BaseCurrencyCode === 'MYR' && rate.SettleCurrencyCode === 'USD');
       if (usdToMyrRate) {
         clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance / usdToMyrRate.ConversionRate;
       } else {
@@ -204,15 +205,13 @@ async function getBalanceInfo(config) {
     }
 
     // Convert InitialMargin to MYR
-    if (clientFunds.InitialMargin) {
+    if (clientFunds.Margin) {
       if (exchangeRates && usdToMyrRate) {
-        clientFunds.InitialMarginMYR = clientFunds.InitialMargin / usdToMyrRate.ConversionRate;
+        clientFunds.Margin = clientFunds.Margin / usdToMyrRate.ConversionRate;
       } else {
         logger.warn('Failed to fetch exchange rates or USD to MYR rate not found. Defaulting InitialMarginMYR to InitialMargin (USD).');
-        clientFunds.InitialMarginMYR = clientFunds.InitialMargin; // Default to USD if rates not fetched or rate not found
+        clientFunds.Margin = clientFunds.Margin; // Default to USD if rates not fetched or rate not found
       }
-    } else {
-      clientFunds.InitialMarginMYR = 0; // Default to 0 if InitialMargin is not available
     }
 
     // Calculate AccountEquity after LedgerBalanceMYR is guaranteed to be set
