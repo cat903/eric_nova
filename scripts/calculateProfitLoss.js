@@ -16,7 +16,7 @@ const calculateProfitLoss = (orders, marketentryStatus, lotSize) => {
     const top = firstOrder.AveragePrice;
     const bottom = secondOrder.AveragePrice;
     const orderQuantity = parseInt(lotSize) || 0;
-    // Ensure first order is SELL and second order is BUY
+
     if (((firstOrder.OrderStatusDesc === 'Filled') || (secondOrder.OrderStatusDesc === 'Filled')) && (firstOrder.BuySell !== secondOrder.BuySell)) {
         let profitLoss = null;
         if (marketentryStatus === 'sell') {

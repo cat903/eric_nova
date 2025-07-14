@@ -50,7 +50,6 @@ async function getOpenPositionList(config) {
       logger.debug(result);
       require('fs').writeFileSync('config.json',JSON.stringify(result));
 
-      // Reload PM2 processes
       exec('pm2 reload serve_api --update-env && pm2 reload force_exit --update-env', (error, stdout, stderr) => {
         if (error) {
           logger.error(`Error reloading PM2 processes: ${error.message}`);

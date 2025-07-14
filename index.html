@@ -25,7 +25,7 @@
       border-bottom: 1px solid #444;
     }
     #client-funds-container p {
-      margin-bottom: 0.25rem; /* Reduce space below paragraphs */
+      margin-bottom: 0.25rem; 
     }
   </style>
 </head>
@@ -43,7 +43,7 @@
     </div>
   </nav>
 
-  <!-- Change Password Modal -->
+
   <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
@@ -229,7 +229,7 @@
           const tr = document.createElement('tr');
           const td = document.createElement('td');
           td.textContent = 'No data available';
-          td.colSpan = 10; // A reasonable default
+          td.colSpan = 10; 
           tr.appendChild(td);
           tbody.appendChild(tr);
           return;
@@ -248,7 +248,7 @@
             'positionSide', 'activatePrice', 'priceRate', 'selfTradePreventionMode',
             'lastQuoteAssetTransacted', 'id', 'clientOrderId',
             'Omnibus', 'DefaultDisplayName', 'Swap', 'IsDelayed', 'Topic',
-            'stopPrice', 'timeInForce', 'tradeId', 'profitLossAmount', 'profitLossResult' // Exclude P/L from Trade History
+            'stopPrice', 'timeInForce', 'tradeId', 'profitLossAmount', 'profitLossResult'
           ];
         } else if (table.id === 'open-positions-table') {
           excludedFields = [
@@ -256,7 +256,7 @@
           ];
         } else if (table.id === 'realized-trades-table') {
           excludedFields = [
-            'tradeId' // Exclude internal tradeId from realized trades
+            'tradeId' 
           ];
         }
 
@@ -416,7 +416,7 @@
         fetchRealizedTrades(1, event.target.value);
       });
 
-      // Tab event listeners for bottom tabs
+  
       document.getElementById('trade-history-tab').addEventListener('shown.bs.tab', () => {
         fetchOrderHistory(currentTradeHistoryPage, tradeHistoryDateFilter.value);
       });
@@ -425,13 +425,12 @@
         fetchRealizedTrades(currentCompletedOrdersPage, completedOrdersDateFilter.value);
       });
 
-      // Initial data fetch for the active tab (Open Trades)
+    
       fetchOpenPositions();
       fetchClientFunds();
-      // Initial fetch for the default active bottom tab (Trade History)
       fetchOrderHistory();
 
-      // Logout Logic
+
       const logoutButton = document.getElementById('logoutButton');
       logoutButton.addEventListener('click', async () => {
         try {
@@ -439,7 +438,7 @@
             method: 'POST',
           });
           if (response.ok) {
-            window.location.href = '/login.html'; // Redirect to login page after logout
+            window.location.href = '/login.html'; 
           } else {
             console.error('Logout failed.');
           }
@@ -448,21 +447,20 @@
         }
       });
 
-      // Refresh data every 5 seconds
+
       setInterval(() => {
-        // Only refresh data for the currently active tab
         const activeTab = document.querySelector('#bottomTabContent > .tab-pane.show.active');
         if (activeTab.id === 'trade-history') {
           fetchOrderHistory(currentTradeHistoryPage, tradeHistoryDateFilter.value);
         } else if (activeTab.id === 'completed-orders') {
           fetchRealizedTrades(currentCompletedOrdersPage, completedOrdersDateFilter.value);
         }
-        fetchOpenPositions(); // Always refresh open positions
-        fetchClientFunds(); // Always refresh client funds
-        getAutoshutoffStatus(); // Also refresh autoshutoff status
+        fetchOpenPositions(); 
+        fetchClientFunds();
+        getAutoshutoffStatus();
       }, 5000);
 
-      // Auto-shutoff toggle logic
+ 
       const autoshutoffToggle = document.getElementById('autoshutoffToggle');
       const autoshutoffStatusDiv = document.getElementById('autoshutoffStatus');
 
@@ -489,21 +487,19 @@
             body: JSON.stringify({ enabled: isEnabled }),
           });
           if (response.ok) {
-            getAutoshutoffStatus(); // Refresh status after update
+            getAutoshutoffStatus();
           } else {
             console.error('Failed to update auto-shutoff status.');
-            autoshutoffToggle.checked = !isEnabled; // Revert toggle if update fails
+            autoshutoffToggle.checked = !isEnabled; 
           }
         } catch (error) {
           console.error('Error updating auto-shutoff status:', error);
-          autoshutoffToggle.checked = !isEnabled; // Revert toggle on error
+          autoshutoffToggle.checked = !isEnabled;
         }
       });
 
-      // Initial fetch for auto-shutoff status
       getAutoshutoffStatus();
 
-      // Download functionality
       async function downloadCSV(data, filename, desiredHeaders = null) {
         const csvRows = [];
         const headers = desiredHeaders || Object.keys(data[0]);

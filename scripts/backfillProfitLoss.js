@@ -1,7 +1,6 @@
 const db = require('../database.js');
 const logger = require('../logger');
 
-// Helper to "promisify" db.all, making it compatible with async/await
 const dbAllAsync = (sql, params) => {
   return new Promise((resolve, reject) => {
     db.all(sql, params, (err, rows) => {
@@ -11,7 +10,7 @@ const dbAllAsync = (sql, params) => {
   });
 };
 
-// Helper to "promisify" db.run
+
 const dbRunAsync = (sql, params) => {
     return new Promise((resolve, reject) => {
         db.run(sql, params, function(err) {
@@ -21,16 +20,10 @@ const dbRunAsync = (sql, params) => {
     });
 };
 
-/**
- * Calculates profit/loss for trades and logs them to the 'realized_trades' table.
- * This function is idempotent and can be run multiple times.
- * It handles partial fills and both long and short positions using FIFO matching.
- */
+
 async function backfillProfitLoss() {
   logger.info('Starting backfill of profit/loss...');
 
-  // Create the logging table if it doesn't already exist.
-  // This makes the script safe and reliable.
   await dbRunAsync(`
     CREATE TABLE IF NOT EXISTS realized_trades (
       tradeId INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -44,7 +37,7 @@ async function backfillProfitLoss() {
     )
   `);
 
-  // Select all filled orders, ordered by creation time.
+
   const allFilledOrders = await dbAllAsync(
     `SELECT * FROM orders 
      WHERE status = ? 
@@ -57,7 +50,7 @@ async function backfillProfitLoss() {
     return;
   }
 
-  // Group orders by symbol
+ 
   const ordersBySymbol = allFilledOrders.reduce((acc, order) => {
     if (!acc[order.symbol]) {
       acc[order.symbol] = [];
@@ -68,21 +61,19 @@ async function backfillProfitLoss() {
 
   for (const symbol in ordersBySymbol) {
     const ordersForSymbol = ordersBySymbol[symbol];
-    const openBuys = []; // FIFO queue for open buy orders
-    const openSells = []; // FIFO queue for open sell orders
+    const openBuys = [];
+    const openSells = []; 
 
     for (const currentOrder of ordersForSymbol) {
-      // Initialize remaining quantity for the current order
       currentOrder.remainingQuantity = currentOrder.quantity;
 
       if (currentOrder.side === 'BUY') {
-        // Try to match current BUY order with existing open SELL orders
         while (openSells.length > 0 && currentOrder.remainingQuantity > 0) {
           const oldestSell = openSells[0];
           const tradeQuantity = Math.min(currentOrder.remainingQuantity, oldestSell.remainingQuantity);
 
-          const profitLossRaw = oldestSell.price - currentOrder.price; // Sell price - Buy price
-          const profitLossAmount = profitLossRaw * 25 * tradeQuantity; // Assuming 25 is contract multiplier
+          const profitLossRaw = oldestSell.price - currentOrder.price;
+          const profitLossAmount = profitLossRaw * 25 * tradeQuantity;
           const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
 
           await dbRunAsync(
@@ -95,20 +86,20 @@ async function backfillProfitLoss() {
           oldestSell.remainingQuantity -= tradeQuantity;
 
           if (oldestSell.remainingQuantity <= 0) {
-            openSells.shift(); // Remove fully matched SELL order
+            openSells.shift();
           }
         }
         if (currentOrder.remainingQuantity > 0) {
-          openBuys.push(currentOrder); // Add remaining BUY quantity to open buys
+          openBuys.push(currentOrder); 
         }
       } else if (currentOrder.side === 'SELL') {
-        // Try to match current SELL order with existing open BUY orders
+
         while (openBuys.length > 0 && currentOrder.remainingQuantity > 0) {
           const oldestBuy = openBuys[0];
           const tradeQuantity = Math.min(currentOrder.remainingQuantity, oldestBuy.remainingQuantity);
 
-          const profitLossRaw = currentOrder.price - oldestBuy.price; // Sell price - Buy price
-          const profitLossAmount = profitLossRaw * 25 * tradeQuantity; // Assuming 25 is contract multiplier
+          const profitLossRaw = currentOrder.price - oldestBuy.price; 
+          const profitLossAmount = profitLossRaw * 25 * tradeQuantity; 
           const profitLossResult = profitLossAmount >= 0 ? "Profit" : "Loss";
 
           await dbRunAsync(
@@ -121,11 +112,11 @@ async function backfillProfitLoss() {
           oldestBuy.remainingQuantity -= tradeQuantity;
 
           if (oldestBuy.remainingQuantity <= 0) {
-            openBuys.shift(); // Remove fully matched BUY order
+            openBuys.shift();
           }
         }
         if (currentOrder.remainingQuantity > 0) {
-          openSells.push(currentOrder); // Add remaining SELL quantity to open sells
+          openSells.push(currentOrder); 
         }
       }
     }
@@ -134,7 +125,7 @@ async function backfillProfitLoss() {
   logger.info('Profit/loss backfill complete.');
 }
 
-// Run the function and catch any potential errors.
+
 backfillProfitLoss().catch(err => {
   logger.error("An error occurred during the backfill process:", err);
 });

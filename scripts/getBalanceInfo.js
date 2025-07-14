@@ -5,7 +5,7 @@ const WebSocket = require('ws');
 const getOpenPositionList = require('./getOpenPosition.js');
 const { fetchExchangeRates } = require('./getExchangeRates.js');
 
-// --- getClientFunds.js content ---
+
 const CLIENT_FUNDS_URL = `https://${process.env.PLATFORM}.phillipmobile.com/MobileControlService.svc/GetClientFund`;
 
 async function fetchClientFundsData(config) {
@@ -51,10 +51,10 @@ async function fetchClientFundsData(config) {
       retryCount++;
     }
   }
-  return null; // Return null if all retries fail
+  return null; 
 }
 
-// --- getMoreBalanceInfo.js content ---
+
 const CONTRACT_MULTIPLIERS = {
   'F.BMD.FCPO': 25,
 };
@@ -120,7 +120,7 @@ function getRealTimePrices(topics) {
               resolve(prices);
             }
           } catch (e) {
-            // Ignore parse errors for non-price data messages
+
           }
         }
       }
@@ -179,7 +179,7 @@ async function calculateUnrealizedPnL(config) {
   return results;
 }
 
-// Consolidated function
+
 async function getBalanceInfo(config) {
   const clientFunds = await fetchClientFundsData(config);
   console.log(clientFunds)
@@ -197,24 +197,24 @@ async function getBalanceInfo(config) {
         clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance / usdToMyrRate.ConversionRate;
       } else {
         logger.warn('USD to MYR exchange rate not found. Defaulting LedgerBalanceMYR to LedgerBalance (USD).');
-        clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance; // Default to USD if rates not fetched
+        clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance; 
       }
     } else {
       logger.warn('Failed to fetch exchange rates. Defaulting LedgerBalanceMYR to LedgerBalance (USD).');
-      clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance; // Default to USD if rates not fetched
+      clientFunds.LedgerBalanceMYR = clientFunds.LedgerBalance;
     }
 
-    // Convert InitialMargin to MYR
+
     if (clientFunds.Margin) {
       if (exchangeRates && usdToMyrRate) {
         clientFunds.Margin = clientFunds.Margin / usdToMyrRate.ConversionRate;
       } else {
         logger.warn('Failed to fetch exchange rates or USD to MYR rate not found. Defaulting InitialMarginMYR to InitialMargin (USD).');
-        clientFunds.Margin = clientFunds.Margin; // Default to USD if rates not fetched or rate not found
+        clientFunds.Margin = clientFunds.Margin; 
       }
     }
 
-    // Calculate AccountEquity after LedgerBalanceMYR is guaranteed to be set
+ 
     clientFunds.AccountEquity = clientFunds.LedgerBalanceMYR + totalUnrealizedPnL;
     clientFunds.AvailableMargin = clientFunds.AccountEquity - clientFunds.Margin;
   }
