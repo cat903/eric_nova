@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en" data-bs-theme="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,28 +8,35 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" rel="stylesheet">
   <style>
-    html, body {
+    html,
+    body {
       height: 100%;
     }
+
     body {
       background-color: #1a1a1a;
       color: #f8f9fa;
     }
+
     .table {
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
     }
+
     .card {
       border: 1px solid #444;
     }
+
     .card-header {
       background-color: #343a40;
       border-bottom: 1px solid #444;
     }
+
     #client-funds-container p {
-      margin-bottom: 0.25rem; 
+      margin-bottom: 0.25rem;
     }
   </style>
 </head>
+
 <body class="d-flex flex-column min-vh-100">
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
     <div class="container-fluid">
@@ -37,14 +45,16 @@
         Trading Dashboard
       </a>
       <div class="d-flex">
-        <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change Password</button>
+        <button class="btn btn-outline-light me-2" data-bs-toggle="modal" data-bs-target="#changePasswordModal">Change
+          Password</button>
         <button class="btn btn-outline-light" id="logoutButton">Logout</button>
       </div>
     </div>
   </nav>
 
 
-  <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel" aria-hidden="true">
+  <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-labelledby="changePasswordModalLabel"
+    aria-hidden="true">
     <div class="modal-dialog">
       <div class="modal-content">
         <div class="modal-header">
@@ -90,7 +100,7 @@
                 <label class="form-check-label" for="autoshutoffToggle">Enable Force-Exit</label>
               </div>
               <div id="autoshutoffStatus" class="mt-2"></div>
-              
+
             </div>
           </div>
         </div>
@@ -120,16 +130,21 @@
             <div class="card-header">
               <ul class="nav nav-tabs card-header-tabs" id="bottomTab" role="tablist">
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link active" id="trade-history-tab" data-bs-toggle="tab" data-bs-target="#trade-history" type="button" role="tab" aria-controls="trade-history" aria-selected="true">Trade History</button>
+                  <button class="nav-link active" id="trade-history-tab" data-bs-toggle="tab"
+                    data-bs-target="#trade-history" type="button" role="tab" aria-controls="trade-history"
+                    aria-selected="true">Trade History</button>
                 </li>
                 <li class="nav-item" role="presentation">
-                  <button class="nav-link" id="completed-orders-tab" data-bs-toggle="tab" data-bs-target="#completed-orders" type="button" role="tab" aria-controls="completed-orders" aria-selected="false">Completed Orders</button>
+                  <button class="nav-link" id="completed-orders-tab" data-bs-toggle="tab"
+                    data-bs-target="#completed-orders" type="button" role="tab" aria-controls="completed-orders"
+                    aria-selected="false">Completed Orders</button>
                 </li>
               </ul>
             </div>
             <div class="card-body">
               <div class="tab-content" id="bottomTabContent">
-                <div class="tab-pane fade show active" id="trade-history" role="tabpanel" aria-labelledby="trade-history-tab">
+                <div class="tab-pane fade show active" id="trade-history" role="tabpanel"
+                  aria-labelledby="trade-history-tab">
                   <div class="d-flex justify-content-between align-items-center mb-3">
                     <h2 class="card-title mb-0">
                       <i class="bi bi-clock-history"></i>
@@ -158,7 +173,8 @@
                       Completed Orders
                     </h2>
                     <div class="d-flex">
-                      <input type="date" id="completed-orders-date-filter" class="form-control me-2" style="width: auto;">
+                      <input type="date" id="completed-orders-date-filter" class="form-control me-2"
+                        style="width: auto;">
                       <button class="btn btn-primary" id="download-completed-orders">Download</button>
                     </div>
                   </div>
@@ -193,7 +209,7 @@
           </div>
           <div class="card-body">
             <div id="client-funds-container" class="d-flex justify-content-around">
-              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -229,7 +245,7 @@
           const tr = document.createElement('tr');
           const td = document.createElement('td');
           td.textContent = 'No data available';
-          td.colSpan = 10; 
+          td.colSpan = 10;
           tr.appendChild(td);
           tbody.appendChild(tr);
           return;
@@ -256,7 +272,7 @@
           ];
         } else if (table.id === 'realized-trades-table') {
           excludedFields = [
-            'tradeId' 
+            'tradeId'
           ];
         }
 
@@ -362,6 +378,10 @@
               <p>MYR ${data.AccountEquity.toFixed(2)} (MYR)</p>
             </div>
             <div>
+              <h5>Realised P&L</h5>
+              <p>MYR 0 (MYR)</p>
+            </div>
+            <div>
               <h5>Unrealised P&L</h5>
               <p>MYR ${data.AccountUPL.toFixed(2)} (MYR)</p>
             </div>
@@ -416,7 +436,7 @@
         fetchRealizedTrades(1, event.target.value);
       });
 
-  
+
       document.getElementById('trade-history-tab').addEventListener('shown.bs.tab', () => {
         fetchOrderHistory(currentTradeHistoryPage, tradeHistoryDateFilter.value);
       });
@@ -425,7 +445,7 @@
         fetchRealizedTrades(currentCompletedOrdersPage, completedOrdersDateFilter.value);
       });
 
-    
+
       fetchOpenPositions();
       fetchClientFunds();
       fetchOrderHistory();
@@ -438,7 +458,7 @@
             method: 'POST',
           });
           if (response.ok) {
-            window.location.href = '/login.html'; 
+            window.location.href = '/login.html';
           } else {
             console.error('Logout failed.');
           }
@@ -455,12 +475,12 @@
         } else if (activeTab.id === 'completed-orders') {
           fetchRealizedTrades(currentCompletedOrdersPage, completedOrdersDateFilter.value);
         }
-        fetchOpenPositions(); 
+        fetchOpenPositions();
         fetchClientFunds();
         getAutoshutoffStatus();
       }, 5000);
 
- 
+
       const autoshutoffToggle = document.getElementById('autoshutoffToggle');
       const autoshutoffStatusDiv = document.getElementById('autoshutoffStatus');
 
@@ -469,7 +489,7 @@
           const response = await fetch('/api/autoshutoff/status');
           const data = await response.json();
           autoshutoffToggle.checked = data.enabled;
-          
+
         } catch (error) {
           console.error('Error fetching auto-shutoff status:', error);
           autoshutoffStatusDiv.textContent = 'Could not fetch auto-shutoff status.';
@@ -490,7 +510,7 @@
             getAutoshutoffStatus();
           } else {
             console.error('Failed to update auto-shutoff status.');
-            autoshutoffToggle.checked = !isEnabled; 
+            autoshutoffToggle.checked = !isEnabled;
           }
         } catch (error) {
           console.error('Error updating auto-shutoff status:', error);
@@ -554,4 +574,5 @@
     });
   </script>
 </body>
+
 </html>
