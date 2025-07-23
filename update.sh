@@ -159,6 +159,7 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
 
     read -r -p "Allow new user registrations? (true/false): " ALLOW_REGISTRATION
 
+    API_KEY=$(openssl rand -hex 16)
     echo "Creating/Overwriting .env file with new credentials..."
     # WARNING: This overwrites the entire .env file. Any other variables
     # previously in .env (restored from backup) will be lost unless added here.
@@ -168,8 +169,10 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
       echo "DISCORDWEBHOOK=$DISCORD"
       echo "PLATFORM=$PLATFORM"
       echo "ALLOW_REGISTRATION=$ALLOW_REGISTRATION"
+      echo "WEBHOOK_API_KEY=$API_KEY"
       # Add any other essential default variables here if needed
     } > "$ENV_FILE" # Ensure this writes to the correct .env file path in the current directory
+
 
     echo ".env file updated successfully."
     
@@ -182,3 +185,4 @@ fi
 clear
 
 echo "Script finished updating"
+echo "Put THIS API KEY IN YOUR TRADINGVIEW: $API_KEY"

@@ -28,11 +28,13 @@ fi
 
 # Create .env file
 echo "Creating .env file..."
+API_KEY=$(openssl rand -hex 16)
 {
   echo "USERE=$USERNAME"
   echo "USERP=$PASSWORD"
   echo "DISCORDWEBHOOK=$DISCORD"
   echo "PLATFORM=$PLATFORM"
+  echo "WEBHOOK_API_KEY=$API_KEY"
 } > .env
 
 echo ".env file created successfully."
@@ -108,3 +110,4 @@ eval $PM2_STARTUP_COMMAND
 
 # Completion message
 echo "Setup completed! Node.js, PM2, Nginx, and SSL certificate have been installed and configured."
+echo "Put THIS API KEY IN YOUR TRADINGVIEW: $API_KEY"
