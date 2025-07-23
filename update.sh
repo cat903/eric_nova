@@ -128,7 +128,7 @@ pm2 list # Show status of applications managed by PM2
 
 # --- Clear Screen and Conditional .env Update ---
 clear
-read -r -p "Do you want to update the .env file (username, password, webhook, platform, allow registration)? (y/N): " UPDATE_CHOICE
+read -r -p "Do you want to update the .env file (username, password, webhook, platform, allow registration, apikey)? (y/N): " UPDATE_CHOICE
 
 # Convert choice to lowercase for case-insensitive comparison (Y/y)
 # Default to 'n' if user just presses Enter
