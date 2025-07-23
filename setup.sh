@@ -28,7 +28,7 @@ fi
 
 # Create .env file
 echo "Creating .env file..."
-API_KEY=$(openssl rand -hex 16)
+API_KEY=$(openssl rand -hex 32)
 {
   echo "USERE=$USERNAME"
   echo "USERP=$PASSWORD"

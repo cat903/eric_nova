@@ -159,7 +159,7 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
 
     read -r -p "Allow new user registrations? (true/false): " ALLOW_REGISTRATION
 
-    API_KEY=$(openssl rand -hex 16)
+    API_KEY=$(openssl rand -hex 32)
     echo "Creating/Overwriting .env file with new credentials..."
     # WARNING: This overwrites the entire .env file. Any other variables
     # previously in .env (restored from backup) will be lost unless added here.
