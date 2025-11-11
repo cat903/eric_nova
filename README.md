@@ -15,6 +15,7 @@ chmod +x setup.sh
 ```
 USERE=`Your Username`
 USERP=`Your Password`
+TFAKEY=`2FA KEY`
 DISCORDWEBHOOK=`Your Discord Webhook Url`
 PLATFORM=`Platform`  (onenovaweb || demo)
 ```
