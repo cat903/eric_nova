@@ -46,7 +46,7 @@ async function getOpenPositionList(config) {
   try {
     const openPositions = await getOpenPositionList(require('../config.json'));
     if(openPositions.title === 'Unauthorized'){
-      const result = await authorizeSession(process.env.USERE,process.env.USERP,process.env.PLATFORM)
+      const result = await authorizeSession(process.env.USERE,process.env.USERP,process.env.TFAKEY,process.env.PLATFORM)
       logger.debug(result);
       require('fs').writeFileSync('config.json',JSON.stringify(result));
 

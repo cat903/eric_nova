@@ -3,6 +3,7 @@ const path = require('path');
 const http2 = require('http2');
 const zlib = require('zlib');
 const url = require('url');
+const { authenticator } = require('otplib');
 const crypto = require('crypto');
 const logger = require('../logger');
 
@@ -224,12 +225,13 @@ async function callLogin(loginUrl, loginPayload, headers) {
 }
 
 // --- Main Execution Async Function ---
-async function runFullLoginProcess(username, password, platform) {
+async function runFullLoginProcess(username, password, tfaKey, platform) {
     try {
         const MY_USERNAME = username;
         const MY_PLAIN_TEXT_PASSWORD = password;
         const MY_PAGE_URL = "/desktop/index.html";
-        const MY_TFA_OTP = "";
+        const token = authenticator.generate(tfaKey);
+        const MY_TFA_OTP = token;
 
         const SERVICE_BASE_URL = `https://${platform}.phillipmobile.com`;
         const PRESESSION_ENDPOINT = `${SERVICE_BASE_URL}/MobileControlService.svc/GeneratePresession`;
