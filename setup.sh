@@ -20,8 +20,9 @@ stty echo
 echo ""
 read -r -p "Please enter your Discord webhook: " DISCORD
 read -r -p "Please enter Desired Platform Code: " PLATFORM
+read -r -p "Please enter your TFA Key: " TFAKEY
 # Validate inputs
-if [[ -z "$USERNAME" || -z "$PASSWORD" || -z "$DISCORD" || -z "$PLATFORM" ]]; then
+if [[ -z "$USERNAME" || -z "$PASSWORD" || -z "$DISCORD" || -z "$PLATFORM" || -z "$TFAKEY" ]]; then
   echo "Error: All fields are required."
   exit 1
 fi
@@ -34,6 +35,7 @@ API_KEY=$(openssl rand -hex 32)
   echo "USERP=$PASSWORD"
   echo "DISCORDWEBHOOK=$DISCORD"
   echo "PLATFORM=$PLATFORM"
+  echo "TFAKEY=$TFAKEY"
   echo "WEBHOOK_API_KEY=$API_KEY"
 } > .env
 

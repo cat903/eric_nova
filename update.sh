@@ -128,7 +128,7 @@ pm2 list # Show status of applications managed by PM2
 
 # --- Clear Screen and Conditional .env Update ---
 clear
-read -r -p "Do you want to update the .env file (username, password, webhook, platform, allow registration, apikey)? (y/N): " UPDATE_CHOICE
+read -r -p "Do you want to update the .env file (username, password, webhook, platform, tfakey, allow registration, apikey)? (y/N): " UPDATE_CHOICE
 
 # Convert choice to lowercase for case-insensitive comparison (Y/y)
 # Default to 'n' if user just presses Enter
@@ -157,6 +157,8 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
 
     read -r -p "Please enter your Desired Platform: " PLATFORM
 
+    read -r -p "Please enter your TFA Key: " TFAKEY
+
     read -r -p "Allow new user registrations? (true/false): " ALLOW_REGISTRATION
 
     API_KEY=$(openssl rand -hex 32)
@@ -168,6 +170,7 @@ if [ "$UPDATE_CHOICE_LOWER" = "y" ]; then
       echo "USERP=$PASSWORD"
       echo "DISCORDWEBHOOK=$DISCORD"
       echo "PLATFORM=$PLATFORM"
+      echo "TFAKEY=$TFAKEY"
       echo "ALLOW_REGISTRATION=$ALLOW_REGISTRATION"
       echo "WEBHOOK_API_KEY=$API_KEY"
       # Add any other essential default variables here if needed
